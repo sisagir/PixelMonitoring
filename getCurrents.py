@@ -21,7 +21,7 @@
 import os
 import argparse
 import copy
-from .numberOfROCs import *
+from numberOfROCs import *
 
 
 def __get_arguments():
@@ -88,7 +88,7 @@ def main(args):
         ### Open file and get bias, analog and digital currents
         currents_file = args.input_directory_name + str(fill) + "_" + args.sub_detector + ".txt"
         if not os.path.exists(currents_file):
-            print(("%s not found. Skipping." % currents_file))
+            print("%s not found. Skipping." % currents_file)
             continue
 
         f = open(currents_file, "r+")
@@ -156,40 +156,40 @@ def main(args):
         if args.phase == 0:
             if(args.sub_detector=="Barrel"): numberOfRocs=copy.deepcopy(numberOfRocsBarrel)
             else: numberOfRocs=numberOfRocsEndCap
-            [HVFile.write(k + " " + str.format("{0:.4f}", float(HV_L1[k])/float(numberOfRocs[k]) ) + "\n") for k in list(HV_L1.keys()) ]
-            [HVFile.write(k + " " + str.format("{0:.4f}", float(HV_L2[k])/float(numberOfRocs[k]) ) + "\n") for k in list(HV_L2.keys()) ]
-            for k in list(HV_L3_ch1.keys()):
+            [HVFile.write(k + " " + str.format("{0:.4f}", float(HV_L1[k])/float(numberOfRocs[k]) ) + "\n") for k in HV_L1.keys() ]
+            [HVFile.write(k + " " + str.format("{0:.4f}", float(HV_L2[k])/float(numberOfRocs[k]) ) + "\n") for k in HV_L2.keys() ]
+            for k in HV_L3_ch1.keys():
                 HV_L3_ch2[k]
                 numberOfRocs[k]
-            [HVFile.write(k + " " + str.format("{0:.4f}", (float(HV_L3_ch1[k]) + float(HV_L3_ch2[k]) )/float(numberOfRocs[k]) ) + "\n") for k in list(HV_L3_ch1.keys()) ]
-            [digFile.write(k + " " + str.format("{0:.4f}", float(digital[k])) + "\n") for k in list(digital.keys()) ]
-            [anaFile.write(k + " " + str.format("{0:.4f}", float(analog[k]) ) + "\n") for k in list(analog.keys()) ]
+            [HVFile.write(k + " " + str.format("{0:.4f}", (float(HV_L3_ch1[k]) + float(HV_L3_ch2[k]) )/float(numberOfRocs[k]) ) + "\n") for k in HV_L3_ch1.keys() ]
+            [digFile.write(k + " " + str.format("{0:.4f}", float(digital[k])) + "\n") for k in digital.keys() ]
+            [anaFile.write(k + " " + str.format("{0:.4f}", float(analog[k]) ) + "\n") for k in analog.keys() ]
             [anaFilePerRoc.write(k + " " + str.format("{0:.4f}", float(analog[k])/float(numberOfRocs[k]))  + "\n")
              if k.endswith("3")
              else anaFilePerRoc.write(k + " " + str.format("{0:.4f}", float(analog[k])/(float(numberOfRocs[k]) + float(numberOfRocs[k[:-1] + "2"])))  + "\n")
-             for k in list(analog.keys())
+             for k in analog.keys()
             ]
 
         else:
             if(args.sub_detector=="Barrel"): numberOfRocs=numberOfRocsBarrelPhase1
             else: numberOfRocs=numberOfRocsEndCapPhase1
-            [HVFile.write(k + " " + str.format("{0:.4f}", float(HV_L1[k])/float(numberOfRocs[k]) ) + "\n") for k in list(HV_L1.keys()) ]
-            [HVFile.write(k + " " + str.format("{0:.4f}", float(HV_L2[k])/float(numberOfRocs[k]) ) + "\n") for k in list(HV_L2.keys()) ]
-            for k in list(HV_L3.keys()):
+            [HVFile.write(k + " " + str.format("{0:.4f}", float(HV_L1[k])/float(numberOfRocs[k]) ) + "\n") for k in HV_L1.keys() ]
+            [HVFile.write(k + " " + str.format("{0:.4f}", float(HV_L2[k])/float(numberOfRocs[k]) ) + "\n") for k in HV_L2.keys() ]
+            for k in HV_L3.keys():
                 if(fill-1==5730):
                     current = float(HV_L3[k])/float(numberOfRocs[k])
                 HVFile.write(k + " " + str.format("{0:.4f}", float(HV_L3[k])/float(numberOfRocs[k]) ) + "\n")
-            [HVFile.write(k + " " + str.format("{0:.4f}", float(HV_L4[k])/float(numberOfRocs[k]) ) + "\n") for k in list(HV_L4.keys()) ]
-            [anaFile.write(k + " " + str.format("{0:.4f}", float(analog[k]) ) + "\n") for k in list(analog.keys()) ]
+            [HVFile.write(k + " " + str.format("{0:.4f}", float(HV_L4[k])/float(numberOfRocs[k]) ) + "\n") for k in HV_L4.keys() ]
+            [anaFile.write(k + " " + str.format("{0:.4f}", float(analog[k]) ) + "\n") for k in analog.keys() ]
 
 
-            for k in list(analog.keys()):
+            for k in analog.keys():
                 if k.endswith("LAY3"):
                     anaFilePerRoc.write(k + " " + str.format("{0:.4f}", float(analog[k])/(float(numberOfRocs[k[:-1] + "2"]) + float(numberOfRocs[k[:-1] + "3"])))  + "\n")
                 elif(k.endswith("LAY14")):
                     anaFilePerRoc.write(k + " " + str.format("{0:.4f}", float(analog[k])/(float(numberOfRocs[k[:-2] + "1"]) + float(numberOfRocs[k[:-2] + "4"])))  + "\n")
 
-            [digFile.write(k + " " + str.format("{0:.4f}", float(digital[k])) + "\n") for k in list(digital.keys()) ]
+            [digFile.write(k + " " + str.format("{0:.4f}", float(digital[k])) + "\n") for k in digital.keys() ]
 
         HVFile.close()
         digFile.close()
