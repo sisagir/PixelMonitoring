@@ -1,5 +1,17 @@
 # Pixel monitoring tools
 
+### Installation
+```bash
+git clone git@github.com:fleble/PixelMonitoring.git
+source setup.sh
+```
+
+### Setup
+After every new login, do:
+```bash
+source cmsenv.sh
+```
+
 ### List of fills with stable beams
 ```bash
 python getFill_TotalLumi.py

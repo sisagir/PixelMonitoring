@@ -1,5 +1,5 @@
 import argparse
-from run3_profile import Run3Sim
+from .run3_profile import Run3Sim
 # def main(args):
     # line_number = args.line_number
     # print_line = args.print_line
@@ -29,7 +29,7 @@ def main(args):
                             run3_lumi=args.lumi, 
                             prof_end_date = '2019-11-20 00:00:00')
     my_run3sim.add_to_profile(args.part,args.disk,args.rog,args.ring)
-    print "INST_LUMI: %s"%my_run3sim.instlumi
+    print("INST_LUMI: %s"%my_run3sim.instlumi)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

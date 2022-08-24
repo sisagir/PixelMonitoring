@@ -7,14 +7,14 @@ import ROOT
 import copy
 
 from array import array
-from constants import *
+from .constants import *
 
 style = ROOT.TStyle();
-style.SetOptFit(0001);
+style.SetOptFit(0o001);
 
 
-startFillRaw = raw_input("Enter start fill number: ")
-endFillRaw = raw_input("Enter end fill number: ")
+startFillRaw = input("Enter start fill number: ")
+endFillRaw = input("Enter end fill number: ")
 
 startFill = int(startFillRaw)
 endFill = int(endFillRaw)
@@ -37,9 +37,9 @@ for row in fillFile:
         fillListArray.append(int(row.split(' ')[0]))
 
 fileNameList = []
-fill_nums = [fillListArray[i] for i in xrange(len(fillListArray)) ]
+fill_nums = [fillListArray[i] for i in range(len(fillListArray)) ]
 
-print "==> List of Fills: ", fill_nums
+print("==> List of Fills: ", fill_nums)
 #fill_nums = [5564, 5565, 5568, 5569, 5570, 5571, 5573]
 barrelOrEndCap = "Barrel"
 
@@ -52,7 +52,7 @@ barrelOrEndCap = "Barrel"
 
 Temps = {}
 
-for fn in xrange(len(fill_nums)):
+for fn in range(len(fill_nums)):
 
 
 
@@ -85,12 +85,12 @@ for fn in fill_nums:
 
     lumiFile = open('FillInfo_TotLumi.txt', 'r+')
     for row in lumiFile:
-        if fn == 4988 and (str(fn)==row.split(' ')[0]): print "testing row splitting: ",row.split(' ')
+        if fn == 4988 and (str(fn)==row.split(' ')[0]): print("testing row splitting: ",row.split(' '))
         if (str(fn)==row.split(' ')[0]) and "None" not in row and int(fn) not in badFills:
             fill_lumis[fn] = float(row.split(' ')[7])/1000.
             if fn == 4988:
-                print "====> Fill number: ", str(fn)
-                print "=====> Luminosity: ", fill_lumis[fn]
+                print("====> Fill number: ", str(fn))
+                print("=====> Luminosity: ", fill_lumis[fn])
 
 
         

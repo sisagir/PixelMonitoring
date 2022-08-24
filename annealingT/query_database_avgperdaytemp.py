@@ -74,20 +74,20 @@ def get_temperatures(run_numbers, start_stop_time):
 #    pp.pprint(temperatures)
     # access datetimes and temperatures
     for sensorfile in sensorfiles:
-        print "NEXT SENSOR";
+        print("NEXT SENSOR");
         sensorname = sensorfile[:-4]
-        print sensorname;
+        print(sensorname);
         DBentry_i = 0;
         times = d[sensorname][0]
         temps = d[sensorname][1]
         if (len(times) != len(temps)) :
-            print "DB file: Number of temperature entries and date entries do not match";
+            print("DB file: Number of temperature entries and date entries do not match");
             continue;
         while DBentry_i < len(temps):
-            print "In temperature while loop";
-            print str(times[0])
+            print("In temperature while loop");
+            print(str(times[0]))
             # pp.pprint(times)
-            print str(temps[0])
+            print(str(temps[0]))
             prevtemp = temps[0]
             # pp.pprint(temps)
             ## construct one temperature entry per day:
@@ -102,21 +102,21 @@ def get_temperatures(run_numbers, start_stop_time):
                         try:
                             currentdatetime = datetime.strptime(times[DBentry_i], '%Y-%m-%d %H:%M:%S.%f')
                         except:
-                            print "Format of " + str(times[DBentry_i]) + " does not match %Y-%m-%d %H:%M:%S.%f - try without %f:"
+                            print("Format of " + str(times[DBentry_i]) + " does not match %Y-%m-%d %H:%M:%S.%f - try without %f:")
                             currentdatetime = datetime.strptime(times[DBentry_i], '%Y-%m-%d %H:%M:%S')
                         finally:
                             if (date_i.date() < currentdatetime.date()):
-                                print "No new entry for " + str(date_i.date()) + ", write prevtemp to file. ";
+                                print("No new entry for " + str(date_i.date()) + ", write prevtemp to file. ");
                                 if (day_i > 0): # write from 23 May onwards
                                     if (day_i == 1):
-                                        print "Start writing from this date onwards: " + str(date_i.date())
+                                        print("Start writing from this date onwards: " + str(date_i.date()))
                                     outfile.write(str(int(time.mktime(date_i.timetuple()))) + '000\t' + str(prevtemp) + '\n');
                                 day_i += 1;
                                 date_i = startdate + timedelta(day_i);
                                 avgtemp = 0;
                             else :
-                                print "-----------------";
-                                print "Found an entry for " + str(date_i.date()) + ". Going to check whether there are more. ";
+                                print("-----------------");
+                                print("Found an entry for " + str(date_i.date()) + ". Going to check whether there are more. ");
                                 averaging = True;
 #                                try:
  #                                   currentdatetime = datetime.strptime(times[DBentry_i], '%Y-%m-%d %H:%M:%S.%f').date()
@@ -125,25 +125,25 @@ def get_temperatures(run_numbers, start_stop_time):
     #                                currentdatetime = datetime.strptime(times[DBentry_i], '%Y-%m-%d %H:%M:%S').date()
      #                           finally:
                                 prevhours = float(currentdatetime.hour) + float(currentdatetime.minute)/60 + float(currentdatetime.second/3600); # until the new entrytime prevtemp is valid
-                                print "Set prevhours to " + str(prevhours);
-                                print "Prevtemp is " + str(prevtemp);
+                                print("Set prevhours to " + str(prevhours));
+                                print("Prevtemp is " + str(prevtemp));
                                 try:
                                   avgtemp = prevhours * prevtemp;
                                 except:
-                                  print "prevtemp is NoneType"
+                                  print("prevtemp is NoneType")
                                 finally:
-                                  print "and avgtemp is now " + str(avgtemp);
+                                  print("and avgtemp is now " + str(avgtemp));
                                   prevtemp = temps[DBentry_i];
                                   DBentry_i += 1; # next entry
                     elif (averaging == True) and (DBentry_i < len(temps)):
                          try:
                              currentdatetime = datetime.strptime(times[DBentry_i], '%Y-%m-%d %H:%M:%S.%f')
                          except:
-                             print "Format of " + str(times[DBentry_i]) + " does not match %Y-%m-%d %H:%M:%S.%f - try without %f:"
+                             print("Format of " + str(times[DBentry_i]) + " does not match %Y-%m-%d %H:%M:%S.%f - try without %f:")
                              currentdatetime = datetime.strptime(times[DBentry_i], '%Y-%m-%d %H:%M:%S')
                          finally:
                              if (date_i.date() < currentdatetime.date()):
-                                 print "No more entry for " + str(date_i.date()) + ". Last entry was " + times[DBentry_i-1]
+                                 print("No more entry for " + str(date_i.date()) + ". Last entry was " + times[DBentry_i-1])
                                  try :
                                      prevminutes =  int((float(prevhours) % int(prevhours))*60.0);
                                  except :
@@ -154,14 +154,14 @@ def get_temperatures(run_numbers, start_stop_time):
                                      prevseconds = 0;
                                  try :
                                      restofday = float((datetime(date_i.year, date_i.month, date_i.day, 23, 59, 59, 999999) - datetime(date_i.year, date_i.month, date_i.day, int(prevhours), prevminutes, prevseconds, 0)).seconds / 3600.);
-                                     print " restofday is " + str(restofday);
+                                     print(" restofday is " + str(restofday));
                                  except :
-                                     print "ERROR"
-                                     print "No more entry for " + str(date_i)
-                                     print "Previous valid entry for current day was " + str(times[DBentry_i-1])
-                                     print "Next entry at " + str(times[DBentry_i])
-                                     print prevhours
-                                     print "ZeroDivisionError? float modulo..."
+                                     print("ERROR")
+                                     print("No more entry for " + str(date_i))
+                                     print("Previous valid entry for current day was " + str(times[DBentry_i-1]))
+                                     print("Next entry at " + str(times[DBentry_i]))
+                                     print(prevhours)
+                                     print("ZeroDivisionError? float modulo...")
 
                                  #   restofday = float((datetime(date_i.year, date_i.month, date_i.day, 23, 59, 59, 999999) - datetime(date_i.year, date_i.month, date_i.day, 0, prevminutes,  int((float(prevminutes) % int(prevminutes))*60.0), 0)).seconds / 3600.);
                                 #print "restofday " + str(restofday);
@@ -169,16 +169,16 @@ def get_temperatures(run_numbers, start_stop_time):
                                      avgtemp += prevtemp * restofday;
                                      prevhours += restofday;
                                  except:
-                                     print "exception: Skip NoneType entry in DB"
-                                     print prevtemp
+                                     print("exception: Skip NoneType entry in DB")
+                                     print(prevtemp)
                                  finally:
                                      DBentry_i+=1;
 #                                 prevtemp = avgtemp/prevhours;
                                  avgtemp = avgtemp/prevhours;
-                                 print str(date_i) +  " final avg temp " + str(avgtemp);
+                                 print(str(date_i) +  " final avg temp " + str(avgtemp));
                                  if (day_i > 0):
                                      if (day_i == 1):
-                                         print "Start writing from this date onwards: " + str(date_i.date())
+                                         print("Start writing from this date onwards: " + str(date_i.date()))
                                      outfile.write(str(int(time.mktime(date_i.timetuple()))) + '000\t' + str(avgtemp) + '\n');
                                  averaging = False;
                                  day_i += 1;
@@ -191,23 +191,23 @@ def get_temperatures(run_numbers, start_stop_time):
                                      prevtemp = temps[DBentry_i];
                                      avgtemp += prevtemp * hours;
                                  except:
-                                     print "exception: Skip NoneType entry in DB"
+                                     print("exception: Skip NoneType entry in DB")
                                  finally:
                                      DBentry_i += 1;
                              else :
-                                 print "Startdate after first DBentry?"
+                                 print("Startdate after first DBentry?")
                     else:
-                        print " No more DB entries "
+                        print(" No more DB entries ")
                         if (day_i > 0):
                             if (day_i == 1):
-                                print "Start writing from this date onwards: " + str(date_i.date())
+                                print("Start writing from this date onwards: " + str(date_i.date()))
                             outfile.write(str(int(time.mktime(date_i.timetuple()))) + '000\t' + str(prevtemp) + '\n');
                         day_i += 1;
                         date_i = startdate + timedelta(day_i);
-                print "NEXT SENSOR " + " resetting ...";
+                print("NEXT SENSOR " + " resetting ...");
                 date_i = startdate + timedelta(day_i);
                 avgtemp = 0;
-                print " End "
+                print(" End ")
 
 
 
@@ -217,9 +217,9 @@ def get_temperatures(run_numbers, start_stop_time):
    # return temperatures
     return "Wrote average temperatures per day to file"
 
-print "start now";
-print startdate_str;
-print enddate_str;
+print("start now");
+print(startdate_str);
+print(enddate_str);
 
 pp = pprint.PrettyPrinter(indent=4)
 #print (get_temperatures([], [startdate_str, enddate_str])) # excluding enddate

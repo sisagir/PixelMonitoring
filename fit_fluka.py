@@ -127,17 +127,17 @@ def get_fluka_field_value(fluka_field, r, z):
     bin_x = fluka_field.GetXaxis().FindBin(r)
     bin_y = fluka_field.GetYaxis().FindBin(z)
     val = fluka_field.GetBinContent(bin_x, bin_y)
-    print "FLUKA(r=%4.2f,z=%4.2f) = %s"%(r,z,val)
+    print("FLUKA(r=%4.2f,z=%4.2f) = %s"%(r,z,val))
     return val
 
 def get_tf2_fluka_fit_value(tf2_fluka_field, r, z):
     val = tf2_fluka_field.Eval(r,z)
-    print "FLUKA_FIT(r=%4.2f,z=%4.2f) = %s"%(r,z,val)
+    print("FLUKA_FIT(r=%4.2f,z=%4.2f) = %s"%(r,z,val))
     return val
 
 def get_fluka_value_diff(fluka_field, tf2_fluka_field, r, z):
     val = get_fluka_field_value(fluka_field, r, z) - get_tf2_fluka_fit_value(tf2_fluka_field, r, z)
-    print "FLUKA - FLUKA_FIT (r=%4.2f,z=%4.2f) = %s"%(r,z,val)
+    print("FLUKA - FLUKA_FIT (r=%4.2f,z=%4.2f) = %s"%(r,z,val))
     return val
 
 def fit_fluence(directory, fluka_th2d, function, xmin, xmax, set_opts = "QN",set_pars = [], set_par_limits = []):
@@ -209,8 +209,8 @@ def main(args):
             if args.pars == "minimize":
                 floatter = lambda x: float(x.lstrip('\'').rstrip('\''))
                 integrator = lambda x: int(x)
-                pars_range_min = map(floatter, args.pars_range_min.split(','))
-                pars_range_max = map(floatter, args.pars_range_max.split(','))
+                pars_range_min = list(map(floatter, args.pars_range_min.split(',')))
+                pars_range_max = list(map(floatter, args.pars_range_max.split(',')))
                 pars_step = list()
                 npars = int(args.npars)
                 nsize = 2
@@ -236,13 +236,13 @@ def main(args):
                     chi2_minimizer.set_final_pars_values(pars, final_pars, final_par_errors)
                     # if counter1<80000: print("COUNTER: %s, PARS: %s"%(counter1, pars))
                     final_pars = [round(f,5) for f in final_pars]
-                    print("COUNTER:  %s -> CHI2: %s\nINITPARS: %s\nPARS:     %s"%(counter1, chi2, pars, final_pars))
+                    print(("COUNTER:  %s -> CHI2: %s\nINITPARS: %s\nPARS:     %s"%(counter1, chi2, pars, final_pars)))
                     pars[0] += pars_step[0]
                     counter1 += 1
                 chi2_pars_dict = chi2_minimizer.minimize()
                 fit_fluence(args.dir, fl_2d_histo, {"name": args.f_name, "expr": args.f_expr}, [float(args.xmin.split(',')[0]), float(args.xmin.split(',')[1])], 
                             [float(args.xmax.split(',')[0]),float(args.xmax.split(',')[1])], "N" , set_pars = chi2_pars_dict["pars"])
-                print("CHI2: %s\nINITPARS: %s\nPARS: %s\nERRORS: %s"%(chi2_pars_dict["chi2"],chi2_pars_dict["pars"],chi2_pars_dict["final_pars"], chi2_pars_dict["final_par_errors"]))
+                print(("CHI2: %s\nINITPARS: %s\nPARS: %s\nERRORS: %s"%(chi2_pars_dict["chi2"],chi2_pars_dict["pars"],chi2_pars_dict["final_pars"], chi2_pars_dict["final_par_errors"])))
             else:
                 fit_fluence(args.dir, fl_2d_histo, {"name": args.f_name, "expr": args.f_expr}, [float(args.xmin.split(',')[0]), float(args.xmin.split(',')[1])], 
                     [float(args.xmax.split(',')[0]), float(args.xmax.split(',')[1])], set_pars = [float(par) for par in args.pars.split(',')])

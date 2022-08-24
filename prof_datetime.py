@@ -1,7 +1,7 @@
 import datetime
 import numpy as np
 import argparse
-import out_temp_wp
+from . import out_temp_wp
 
 datetime_type = "%Y-%m-%d %H:%M:%S.%f"
 
@@ -16,7 +16,7 @@ class WarmPeriod(object):
         lines_times = []
         for l in self.lines_input[0:line_number]:
             lines_times.append(l.split('\t')[0])
-        array_dtimes = map(int,lines_times)
+        array_dtimes = list(map(int,lines_times))
         array_dtimes = np.array(array_dtimes)
         dtime = np.sum(array_dtimes)
         # if self.print_line:
@@ -52,7 +52,7 @@ class WarmPeriod(object):
             t0 = l[0]
         
         dt_after_wp=self.get_datetime(wp_line_end)
-        print ("dt_after_wp = %s"%(dt_after_wp))
+        print(("dt_after_wp = %s"%(dt_after_wp)))
         out_lines.append('%s\t273.15\t0\t%s\t-99.00\t-99.00\n' %
                                  (int(round((dt_after_wp-t0).total_seconds())), 293.15))
         # print "%s | t0 | t | dt : %s | %s | %s\n" % (wp_line_begin+i+1,
@@ -97,7 +97,7 @@ def main(args):
     # print lis
     if args.print_line_only:
         mydate = myWP.get_datetime(line_number)
-        print("date/time for line %s: %s"%(line_number,datetime.datetime.strftime(mydate, datetime_type)))
+        print(("date/time for line %s: %s"%(line_number,datetime.datetime.strftime(mydate, datetime_type))))
     else:
         myWP.write_new_profile("%s_wp1718.txt"%file_name.split(".")[0])
 

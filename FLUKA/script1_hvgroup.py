@@ -1,5 +1,5 @@
 import ROOT as rt
-import fluka_l1
+from . import fluka_l1
 import math
 
 n = [0,0,0,0]
@@ -64,8 +64,8 @@ for m in range(1,6):
    alpha_lin[m].append(0.)
    alpha_lin_err[m].append(0.)
      
-print(str(alpha_lin))
-print(str(alpha_lin_err))
+print((str(alpha_lin)))
+print((str(alpha_lin_err)))
 for i in range(0,4):
  for s in fluka_l1.fl_pos_dict:
   if ('LYR1' in s and 'MOD%s'%(i+1) in s):

@@ -1,5 +1,5 @@
 import ROOT as rt
-import SiPixelDetsUpdatedAfterFlippedChange_BPIX as pos
+from . import SiPixelDetsUpdatedAfterFlippedChange_BPIX as pos
 from collections import namedtuple
 import argparse
 
@@ -79,7 +79,7 @@ def write_pos_fl(histo, pos_dict):
     fw.write('''from collections import namedtuple
     \n\nPosFluence = namedtuple('PosFluence', 'r phi z fluence')\n''')
     fw.write('fl_pos_dict = {\n')
-    for m,p in pos_dict.iteritems():
+    for m,p in pos_dict.items():
         fw.write('"%s": PosFluence(r = %s, phi = %s, z = %s, fluence = %s),\n'%(m,p[0],p[1],p[2],
             histo.GetBinContent(histo.GetXaxis().FindBin(p[0]), histo.GetYaxis().FindBin(p[2]))))
         # print "%s - %s"%(histo.GetXaxis().FindBin(p[0]), histo.GetYaxis().FindBin(p[2]))
@@ -94,9 +94,9 @@ def average_fl(fl_dict,histo):
     aver_z=0.
     aver_fl = 0
     
-    for m,pos_fl in fl_dict.iteritems():
+    for m,pos_fl in fl_dict.items():
         if 'LYR1' in m:
-            print "%s -> %s"%(m,pos_fl)
+            print("%s -> %s"%(m,pos_fl))
             aver_r += pos_fl.r
             aver_phi += pos_fl.phi
             aver_z += pos_fl.z
@@ -136,15 +136,15 @@ def main(args):
         pos_dict = pos.name_pos_map
         write_pos_fl(histo, pos_dict)
     elif to_do == 'aver':
-        from FLUKA import fluka_l1
+        from .FLUKA import fluka_l1
         fl_pos = fluka_l1.fl_pos_dict
         fl_aver = average_fl(fl_pos,histo)
-        print "AVERAGE FLUENCE: %s"%fl_aver.fluence
-        print "AVERAGE R      : %s"%fl_aver.r
-        print "AVERAGE PHI    : %s"%fl_aver.phi
-        print "AVERAGE Z      : %s"%fl_aver.z
+        print("AVERAGE FLUENCE: %s"%fl_aver.fluence)
+        print("AVERAGE R      : %s"%fl_aver.r)
+        print("AVERAGE PHI    : %s"%fl_aver.phi)
+        print("AVERAGE Z      : %s"%fl_aver.z)
     elif to_do == 'histo_draw':
-        from FLUKA import fluka_l1
+        from .FLUKA import fluka_l1
         fl_pos = fluka_l1.fl_pos_dict
         fl_aver = average_fl(fl_pos,histo)
         histo_draw(fl_pos,2.7,histo,"fl_vs_z_l1_27mm.root")
@@ -154,7 +154,7 @@ def main(args):
     elif to_do == "get_integr_fl":
         f = rt.TFile.Open("FLUKA/fluence_field.root")
         histo = f.Get("fluence_allpart_6500GeV_phase1")
-        print get_integral_fl(histo,2.9,0,"max")
+        print(get_integral_fl(histo,2.9,0,"max"))
 
 
 if __name__ == "__main__":

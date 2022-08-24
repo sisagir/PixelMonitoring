@@ -3,7 +3,7 @@ import datetime
 import matplotlib.pyplot as plt
 import matplotlib.dates as dates
 #from numberOfROCs import numberOfRocs
-from numberOfROCs import numberOfRocsBarrelPhase1
+from .numberOfROCs import numberOfRocsBarrelPhase1
 
 
 
@@ -23,13 +23,13 @@ cursor.execute(query)
 
 fillrow = cursor.fetchall()
 
-print "Fill    BeginTime        EndTime"
+print("Fill    BeginTime        EndTime")
 
 outfileName = "FillInfo.txt"
 ofile = open(outfileName, "w+")
 
-for i in xrange(len(fillrow)):
-    print fillrow[i][0],"   ", fillrow[i][1],"   ",fillrow[i][2]
+for i in range(len(fillrow)):
+    print(fillrow[i][0],"   ", fillrow[i][1],"   ",fillrow[i][2])
     ofile.write( str(fillrow[i][0])+ "  " + str(fillrow[i][1]) + " " + str(fillrow[i][1]) + "\n")
 
 ofile.close()

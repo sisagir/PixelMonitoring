@@ -20,9 +20,9 @@ with open(modulepos+"/"+modulepos+"_prot_6500GeV_"+phase+".txt", "r") as protfil
 		aprotlines = aprotfile.read().splitlines();
 		pionlines = pionfile.read().splitlines();
 		for i, protline in enumerate(protfile):
-			print("str(i) " + str(i))
-			print("protline"+str(protline.split()[1]))
-			print("aprotline"+str(aprotlines[i].split('\t')[1] ))
-			print("pionline"+str(pionlines[i].split('\t')[1] ))
+			print(("str(i) " + str(i)))
+			print(("protline"+str(protline.split()[1])))
+			print(("aprotline"+str(aprotlines[i].split('\t')[1] )))
+			print(("pionline"+str(pionlines[i].split('\t')[1] )))
 			writefile.write(str(protline.split()[0]) + '\t' + str('%.4E' % ( Decimal(protline.split()[1]) + Decimal(aprotlines[i].split('\t')[1]) + Decimal(pionlines[i].split('\t')[1]))) + '\n' )
 writefile.close()

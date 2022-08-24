@@ -5,8 +5,8 @@ import matplotlib.dates as dates
 ###from numberOfROCs import numberOfRocs
 
 
-startFillRaw = raw_input("Enter start fill number: ")
-endFillRaw = raw_input("Enter end fill number: ")
+startFillRaw = input("Enter start fill number: ")
+endFillRaw = input("Enter end fill number: ")
 
 startFill = int(startFillRaw)
 endFill = int(endFillRaw)
@@ -19,7 +19,7 @@ while fillNum <= endFill:
 	for row in goodFillsFile.readlines():
 		#print "Fill numbers: ", row
 		if str(fillNum) + "  " in row:
-			print "If condition is satisfied"
+			print("If condition is satisfied")
 			### Opening connection
 			connection = cx_Oracle.connect('cms_trk_r/1A3C5E7G:FIN@cms_omds_adg')
 			cursor = connection.cursor()
@@ -36,13 +36,13 @@ where  BEGINTIME IS NOT NULL and lhcfill is not null and lhcfill = :fillNum
 
 			fillTime = cursor.fetchall()
 
-			print "Fill Number: ", fillNum
+			print("Fill Number: ", fillNum)
 			begintime = fillTime[0][1]
 			endSTBtime= fillTime[0][2]
-			print "Begin Time: ", begintime
+			print("Begin Time: ", begintime)
                         #endtime = endSTBtime
 			endtime =  begintime + datetime.timedelta(0,600)
-			print "End Time: ", endtime
+			print("End Time: ", endtime)
     
 	
 	### Define query to get currents for Barrel Pixels
@@ -60,17 +60,17 @@ order by part, CMS_TRK_DCS_PVSS_COND.tkplcreadsensor.change_date
 
 """
 
-			print query2
-			print begintime
-			print endtime
+			print(query2)
+			print(begintime)
+			print(endtime)
 			cursor.execute(query2, {"the_start_time" : begintime, "the_end_time" : endtime})
 			row = cursor.fetchall()
 #			
 			fileCurrents = "txt/"+str(fillNum) + "_TAIR.txt"
 			fcur = open(fileCurrents, "w+")
 			
-			for i in xrange(len(row)):
-				print "====> ", str(row[i][0]) + "   " + str(row[i][1]) + "   " + str(row[i][2])+ "\n"
+			for i in range(len(row)):
+				print("====> ", str(row[i][0]) + "   " + str(row[i][1]) + "   " + str(row[i][2])+ "\n")
 				fcur.write(str(row[i][0]) + "   " + str(row[i][1]) + "   " + str(row[i][2])+ "\n")
 				
 			fcur.close()

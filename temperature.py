@@ -57,18 +57,18 @@ query = """
 
 
 
-print "start executing query ..."
+print("start executing query ...")
 cursor.execute(query)
 result = cursor.fetchall()
-print "finish query execution!"
+print("finish query execution!")
 
 outputFile = "temperature.dat"
 fcur = open(outputFile, "w+")
 
-print "writing output..."
+print("writing output...")
 
 
-for i in xrange(len(result)):
+for i in range(len(result)):
 
     alias = result[i][0]
     
@@ -131,7 +131,7 @@ for i in xrange(len(result)):
 
     fcur.write(str(result[i][0]) + "   " + alias + "   " + str(result[i][1]) + "   " + str(result[i][2]) + "\n")
 
-print "finish output!"
+print("finish output!")
 
 fcur.close()
 connection.close()

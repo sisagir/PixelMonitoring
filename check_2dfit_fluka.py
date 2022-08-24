@@ -1,6 +1,6 @@
 import ROOT as rt
 import math
-from FLUKA.fluka_l1 import *
+from .FLUKA.fluka_l1 import *
 from collections import namedtuple
 
 class FlukaField(object):
@@ -236,14 +236,14 @@ def main():
         z = zmin + dz/2.
     ndf -= fl_fit.get_npars()
     chi2 /= ndf
-    print("CHI2 = %s"%chi2)
+    print(("CHI2 = %s"%chi2))
     fl_fit.set_partial_derivatives(part_derivs_fluka_expr, part_derivs_pars)
     new_fl_fit = fl_fit.tf2_r_to_l(r0)
     integral = new_fl_fit.eval_integral(-L/2., L/2., z0-Lz/2., z0+Lz/2.)
     integral_per_s = new_fl_fit.fluence_per_area(-L/2., L/2., z0-Lz/2., z0+Lz/2.)
     integral_error = new_fl_fit.get_integral_error(-L/2., L/2., z0-Lz/2., z0+Lz/2.,r0)
-    print "Integral(lmin=%4.2f,lmax=%4.2f,zmin=%4.2f,zmax=%4.2f) = %s"%(-L/2., L/2., z0-Lz/2., z0+Lz/2., integral)
-    print "1/S Integral(lmin=%4.2f,lmax=%4.2f,zmin=%4.2f,zmax=%4.2f) = %s +- %s"%(-L/2., L/2., z0-Lz/2., z0+Lz/2., integral_per_s, integral_error)
+    print("Integral(lmin=%4.2f,lmax=%4.2f,zmin=%4.2f,zmax=%4.2f) = %s"%(-L/2., L/2., z0-Lz/2., z0+Lz/2., integral))
+    print("1/S Integral(lmin=%4.2f,lmax=%4.2f,zmin=%4.2f,zmax=%4.2f) = %s +- %s"%(-L/2., L/2., z0-Lz/2., z0+Lz/2., integral_per_s, integral_error))
     fluka_field_val = fl_field.Eval(r0,z0)
     of_file = open("fluka_vals_hvgroup.txt", "w+")
     "FLUKA_FIELD(r0=%4.2f,z=%4.2f) = %s\n"%(r0,z0,fluka_field_val)

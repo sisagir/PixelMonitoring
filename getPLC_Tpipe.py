@@ -7,21 +7,21 @@ import numpy as np
 import math
 ###from numberOfROCs import numberOfRocs
 import optparse
-from numberOfROCs import *
+from .numberOfROCs import *
 import collections
 import ROOT as rt
 import sys
 
-from modules_geom import Module,ROG
-from rogring_pc import *
-from fillIntLumi import *
-from rogchannel_modules import *
-from SiPixelDetsUpdatedAfterFlippedChange import *
+from .modules_geom import Module,ROG
+from .rogring_pc import *
+from .fillIntLumi import *
+from .rogchannel_modules import *
+from .SiPixelDetsUpdatedAfterFlippedChange import *
 
 sys.path.append('../pixmon/')
 sys.path.append('../pom/cgi-bin/')
 
-from currents import show_vmon as ivmon
+from .currents import show_vmon as ivmon
 from probes import get_temperatures_local as crp
 
 usage = "usage: %prog [options]"
@@ -42,7 +42,7 @@ parser.add_option("", "--min20", 	action="store_true", dest="min20")
 
 sensorMapOld_str=["4I_L1D2MN","4M_L1D2MN","4R_L1D2MN","3I_L2D1MN","3M_L2D1MN","3R_L2D1MN","4I_L2D2PN","4M_L2D2PN","4R_L2D2PN","2I_L3D1MN","2R_L3D1MN","5I_L3D3MN","5R_L3D3MN","1I_L4D2MN","1M_L4D2MN","1R_L4D2MN","6M_L4D3PN","6R_L4D3PN","6I_L4D4MN","6R_L4D4MN","3M_L1D1MF","3I_L1D1MF","3I_L2D1PF","3M_L2D1PF","3R_L2D1PF","2I_L3D1PF","2M_L3D1PF","2R_L3D2MF","2I_L3D2MF","1I_L4D2PF","1M_L4D2PF","1R_L4D2PF","6M_L4D3MF","6R_L4D3MF","4I_L2D2MF","4M_L2D2MF","4R_L2D2MF","6I_L4D4PF","6R_L4D4PF"]
 sensorMapNew_str=["4R_L1D2MN","4I_L1D2MN","4M_L1D2MN","1I_L4D2MN","1M_L4D2MN","1R_L4D2MN","6R_L4D3PN","6M_L4D3PN","6I_L4D3PN","2R_L3D1MN","2I_L3D1MN","5R_L3D3MN","5I_L3D3MN","3I_L2D1MN","3M_L2D1MN","3R_L2D1MN","4M_L2D2PN","4R_L2D2PN","6R_L4D4MN","6I_L4D4MN","3I_L1D1MF","3M_L1D1MF","1I_L4D2PF","1M_L4D2PF","1R_L4D2PF","2M_L3D1PF","2I_L3D1PF","2I_L3D2MF","2R_L3D2MF","3I_L2D1PF","3M_L2D1PF","3R_L2D1PF","4M_L2D2MF","4R_L2D2MF","6I_L4D3MF","6M_L4D3MF","6R_L4D3MF","6R_L4D4PF","6I_L4D4PF"]
-sensorMapNew=dict(zip(sensorMapOld_str, sensorMapNew_str))
+sensorMapNew=dict(list(zip(sensorMapOld_str, sensorMapNew_str)))
 good_sectors = ["BmO", "BmI", "BpO", "BpI"]
 broken_sectors = ["PixelBarrel_BpI_S3_LAY3", "PixelBarrel_BpI_S3_LAY4", "PixelBarrel_BpI_S5_LAY4"]
 oracleTimeMask = "DD-Mon-YYYY HH24.MI.SS.FF"
@@ -69,8 +69,8 @@ if options.temp == '':
 	pcboard_name = part_disk_rog_ring_to_rogchannel_pcboardtemp(part, disk, rog, ring, 'pcboard')
 else:
 	pcboard_name = options.temp
-print("%s: %s"%("rog_channel",rog_channel))
-print("%s: %s"%("pcboard_name",pcboard_name))
+print(("%s: %s"%("rog_channel",rog_channel)))
+print(("%s: %s"%("pcboard_name",pcboard_name)))
 # "%s/%s"%(options.rog,channel)
 # pcboard_name = rogchannel_to_pcboard(rog_channel)
 
@@ -97,8 +97,8 @@ def correctAlias( sensorName ):
 	return newSensorName
 
 def Ileak_per_module_data(row,outFile):
-	Ileak=dict(zip(["L1","L2","L3","L4","D1","D2","D3"],[[],[],[],[],[],[],[]]))
-	dIleak=dict(zip(["L1","L2","L3","L4","D1","D2","D3"],[[],[],[],[],[],[],[]]))
+	Ileak=dict(list(zip(["L1","L2","L3","L4","D1","D2","D3"],[[],[],[],[],[],[],[]])))
+	dIleak=dict(list(zip(["L1","L2","L3","L4","D1","D2","D3"],[[],[],[],[],[],[],[]])))
 	new_tag=""
 	help_new_tag_arr=[]
 	for l in row:
@@ -134,7 +134,7 @@ def Ileak_per_module_data(row,outFile):
 	# 	print type(l)
 	# 	outFile.write("%s\t%4.2f\n"%(l,float(Ileak[layerTag][i])))
 	# print Ileak["L1"]
-	for layer,i in Ileak.iteritems():
+	for layer,i in Ileak.items():
 		if len(Ileak)>0:
 			dIleak[layer] = np.array(Ileak[layer]).std()*16
 			Ileak[layer] = np.array(Ileak[layer]).mean()*16
@@ -191,7 +191,7 @@ while fillNum <= endFill:
 	for row in goodFillsFile.readlines():
 		#print "Fill numbers: ", row
 		if str(fillNum) + "  " in row:
-			print "If condition is satisfied"
+			print("If condition is satisfied")
 			### Opening connection
 
 ### Define query to get begin and end time of stable beam for fillnumber specified in input
@@ -208,20 +208,20 @@ where  BEGINTIME IS NOT NULL and lhcfill is not null and lhcfill = :fillNum
 
 			fillTime = cursor.fetchall()
 
-			print "Fill Number: ", fillNum
+			print("Fill Number: ", fillNum)
 			begintime = fillTime[0][1]
 			beginSTBtime = fillTime[0][1]
 			if count == 0:
 				proFile.write("BEGINTIME: %s\n"%beginSTBtime)
 				proFile.write("delta t\tcorr T\tFl_n\t\tT\tI_leak\tstd I_leak\n")
 			endSTBtime = fillTime[0][2]
-			print "Start  Time: ", begintime
+			print("Start  Time: ", begintime)
 			#endtime =  begintime + datetime.timedelta(0,600) # 10 min into stable beam
 			endtime =  begintime + datetime.timedelta(0,1200) # 20 min into stable beam
 			begin20minSTB =  begintime + datetime.timedelta(0,1200) # 20 min into stable beam
 			# endtime = endSTBtime
-			print "Sta+10 Time: ", endtime
-			print "EndSTB Time: ", endSTBtime
+			print("Sta+10 Time: ", endtime)
+			print("EndSTB Time: ", endSTBtime)
 
 	### Define query to get currents for Barrel Pixels
 
@@ -509,7 +509,7 @@ where  BEGINTIME IS NOT NULL and lhcfill is not null and lhcfill = :fillNum
 				# 		lumi="0"
 				# 		# corrTemp=0
 				lumi = fillLumi[fillNum]['20mins']
-				print "lumi=%s\n"%lumi
+				print("lumi=%s\n"%lumi)
 				lumi *= 1e-6
 
 				# cursor.execute(query2, {"name": name, "start_time" : begintime, "stop_time" : endSTBtime})
@@ -590,7 +590,7 @@ where  BEGINTIME IS NOT NULL and lhcfill is not null and lhcfill = :fillNum
 				else:
 					lumi = fillLumi[fillNum]['after20mins']
 
-			print "lumi=%s\n"%lumi
+			print("lumi=%s\n"%lumi)
 			lumi *= 1e-6
 			# cursor.execute(query2, {"name": name, "start_time" : begintime, "stop_time" : endSTBtime})
 			# row = cursor.fetchall()

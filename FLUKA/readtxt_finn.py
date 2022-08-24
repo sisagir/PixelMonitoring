@@ -50,25 +50,25 @@ def per_section(datafile):
     section = []
     for line in datafile:
         if (line.strip() == str(1)):
-            print "IN FUNCTION per_section, end of section "
+            print("IN FUNCTION per_section, end of section ")
             tmp = section
             section = []
             if tmp: # don't count first empty one
                 yield tmp
         else:
             section.append(line)
-    print "IN FUNCTION per_section, end of last section "
+    print("IN FUNCTION per_section, end of last section ")
     yield section # last one
 
 
 # delete old files
-print "Deleting old files ... "
+print("Deleting old files ... ")
 for oldfile in writefiles:
-    print oldfile;
+    print(oldfile);
     try:
          os.remove(oldfile);
     except:
-        print "no such file";
+        print("no such file");
 # for olderrfile in percerrwritefiles:
 #     print olderrfile;
 #     try:
@@ -76,23 +76,23 @@ for oldfile in writefiles:
 #     except:
 #         print "no such file";
 
-print "End of deletion process."
+print("End of deletion process.")
 # end of deletion
 
 
 #with open("cmsv3_20_1_0_usrbin_40_ascii", "r") as readfile: #phase0 6500 GeV
 with open("cmsv3_23_1_0_usrbin_40_ascii", "r") as readfile: #phase1 6500 GeV
     for si, section in enumerate(per_section(readfile)):
-        print " startentry = " + str(startentry) + " linesPerZPos " + str(linesPerZPos);
-        print " errstartentry = " + str(errstartentry);
+        print(" startentry = " + str(startentry) + " linesPerZPos " + str(linesPerZPos));
+        print(" errstartentry = " + str(errstartentry));
         rpos=rbinwidth/2 # mid-bin = 0.0+halfbinwidth
-        print "si : index " + str(si);
+        print("si : index " + str(si));
 		#	if ((int(si) == 3) or (int(si) == 7) or (int(si) == 11)): # only every second "discovered" section is one with data
 		#		print "After filter, si : index " + str(si);
         with open(writefiles[int(si)], "a") as writefile:
-            print "to writefile: " + str(writefile);
+            print("to writefile: " + str(writefile));
             for i, line in enumerate(section[8:]):
-                print("line nr: " + str(i) + "; line content: " + line);
+                print(("line nr: " + str(i) + "; line content: " + line));
                 if ((i >= int(startentry)) and (i < startentry + int(linesPerZPos))):
                     print("YES");
                     for j, fluenceentry in enumerate(line.split()):
@@ -107,5 +107,5 @@ with open("cmsv3_23_1_0_usrbin_40_ascii", "r") as readfile: #phase1 6500 GeV
         # 				percerrwritefile.write(str( round(rpos,2)) + '\t' + str(errentry) + '\n');
         # 				rpos+=rbinwidth;
 print(startentry);
-print(startentry+linesPerZPos);
+print((startentry+linesPerZPos));
 #writefile.close();

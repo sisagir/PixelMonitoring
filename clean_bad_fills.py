@@ -63,7 +63,7 @@ def remove_bad_fills(tag):
         flux0=flux
         # print("%s: counter = %s -> fills = %s"%(i, counter, len(fills_set)))
         
-    print("all: counter = %s -> fills = %s"%(counter, len(fills_set)))
+    print(("all: counter = %s -> fills = %s"%(counter, len(fills_set))))
     # print fills_set
 
 def main():

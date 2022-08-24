@@ -22,7 +22,7 @@ def rogchannel_pc_write(out_write):
     fout = open(out_write,"w+")
     ret_dict = rogchannel_pc()
     fout.write("rogchannel_pc = {\n")
-    for k, r in ret_dict.iteritems():
+    for k, r in ret_dict.items():
         fout.write("'%s': %s,\n"%(k,str(r)))
     fout.write("}")
     fout.close()
@@ -57,7 +57,7 @@ def rogchannel_to_pcboard(rogchannel):
     ret = "PixelEndcap_"
     rog,channel = rogchannel.split('/')
     rog_list = rog.split('_')
-    print rog_list
+    print(rog_list)
     abcd = 'ABCD'
     ret = ret + rog_list[1] + "_PC_" + rog_list[2][-1] + abcd[int(rog_list[3][-1])-1]
     return ret

@@ -14,7 +14,7 @@ class FlukaField(object):
 
 def main(args):
     gf = FlukaField()
-    print gf.fluence(float(args.r), float(args.z))
+    print(gf.fluence(float(args.r), float(args.z)))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -18,7 +18,7 @@ def get_geometry(input_file, output_file, part):
             s1 = s1[0]
             s1 = s1.split(' ')
             name_m = s1[0]
-            pos_m = map(float,s1[3].split('/'))
+            pos_m = list(map(float,s1[3].split('/')))
             fout.write("'%s': %s,\n"%(name_m,str(pos_m)))
             # map_name_pos[name_m] = pos_m
     fout.write("}")

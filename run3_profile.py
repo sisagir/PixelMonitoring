@@ -1,10 +1,10 @@
 import numpy
 import datetime
-from modules_geom import Module,ROG
-from rogring_pc import *
-from fillIntLumi import *
-from rogchannel_modules import *
-from SiPixelDetsUpdatedAfterFlippedChange import *
+from .modules_geom import Module,ROG
+from .rogring_pc import *
+from .fillIntLumi import *
+from .rogchannel_modules import *
+from .SiPixelDetsUpdatedAfterFlippedChange import *
 import ROOT as rt
 # import prof_datetime
 
@@ -24,7 +24,7 @@ class Run3Sim(object):
         self.begin_Run3 = datetime.datetime(year=run3_years[0],month=6,day=1)
         self.end_Run3 = datetime.datetime(year=run3_years[-1],month=12,day=31)
         run3_duration = (self.end_Run3-self.begin_Run3).total_seconds()
-        print "run3_duration(before) = %s"%run3_duration
+        print("run3_duration(before) = %s"%run3_duration)
         self.warm_periods_run3 = [
             [datetime.datetime(year=2021,month=11,day=24),datetime.datetime(year=2021,month=12,day=1)],
             [datetime.datetime(year=2022,month=11,day=24),datetime.datetime(year=2022,month=12,day=1)],
@@ -44,7 +44,7 @@ class Run3Sim(object):
         for i,wp3 in enumerate(self.warm_periods_run3):
             run3_duration -= (wp3[1]-wp3[0]).total_seconds()
             run3_duration -= (self.storage_date_run3[i][1]-self.storage_date_run3[i][0]).total_seconds()
-        print "run3_duration(after) = %s"%run3_duration
+        print("run3_duration(after) = %s"%run3_duration)
         self.instlumi = float(run3_lumi)/float(run3_duration)
         
     def add_to_profile(self, part, disk, rog, ring):

@@ -8,10 +8,10 @@ import ROOT
 import copy
 
 from array import array
-from constants import *
+from .constants import *
 
 style = ROOT.TStyle();
-style.SetOptFit(0001);
+style.SetOptFit(0o001);
 
 
 usage = 'usage: %prog --BarrelorEndCap BarrelOrEndCap --phase Phase'
@@ -61,7 +61,7 @@ for row in fillFile:
 
 
 fileNameList = []
-fill_nums = [fillListArray[i] for i in xrange(len(fillListArray)) ]
+fill_nums = [fillListArray[i] for i in range(len(fillListArray)) ]
 #print "list of fill numbers: ", fill_nums
 #barrelOrEndCap = "EndCap"
 #barrelOrEndCap = "Barrel"
@@ -106,7 +106,7 @@ class current:
 
 Currents = {}
 
-for fn in xrange(len(fill_nums)):
+for fn in range(len(fill_nums)):
 
     if fill_nums[fn] <= 2351:
         T_coolant = 7
@@ -167,7 +167,7 @@ for fn in xrange(len(fill_nums)):
     Currents[str(fill_nums[fn])]= I
 
     if Currents[str(fill_nums[fn])].I_leak_LAY1>200 and I.I_leak_LAY2 >200 and I.I_leak_LAY3 >200 and I.I_leak_LAY4 >200 and fill_nums[fn] > 2000 and fill_nums[fn] < 2500:
-      print "Fill " + str(fill_nums[fn]) + "has current > 200\n"
+      print("Fill " + str(fill_nums[fn]) + "has current > 200\n")
 
 
 # *********************************************************************
@@ -182,7 +182,7 @@ DigCurrents = {}
 
 def getAnaDigCurrent(fill_nums, curType):
     currents = {}
-    for fn in xrange(len(fill_nums)):
+    for fn in range(len(fill_nums)):
         filename ="txt/" + str(fill_nums[fn]) + "_" + barrelOrEndCap + "_"+curType+".txt"
         f = open(filename, 'r+')
         I = current()
@@ -225,13 +225,13 @@ for fn in fill_nums:
     lumiFile = open('FillInfo_TotLumi.txt', 'r+')
     for row in lumiFile:
 
-        if fn == 4988 and (str(fn)==row.split(' ')[0]): print "testing row splitting: ",row.split(' ')
+        if fn == 4988 and (str(fn)==row.split(' ')[0]): print("testing row splitting: ",row.split(' '))
         if (str(fn)==row.split(' ')[0]) and "None" not in row and int(fn) not in badFills:
             fill_lumis[fn] = (float(row.split(' ')[7])/1000.) 
             if (period=="2017"):fill_lumis[fn] = (float(row.split(' ')[7])/1000.) - 73810.286
              
             if fn == 4988:
-                print "====> Fill number: ", str(fn)
+                print("====> Fill number: ", str(fn))
 
 # *********************************************************************
 # Currents vs Phi                                                  
@@ -243,7 +243,7 @@ for fn in fill_nums:
 
 def sumElList(l): 
     x = 0
-    for i in xrange(len(l)) :
+    for i in range(len(l)) :
         x += l[i]
 
     return x 
@@ -252,7 +252,7 @@ def sumElList(l):
 def getCurrentVsPhi(fill, z="m"):
 
     if fill < 5900:
-        print "===========> New temperature "
+        print("===========> New temperature ")
         T_coolant = -20
     else: T_coolant = -22
     ### Sensor temperature in Kelvin
@@ -266,7 +266,7 @@ def getCurrentVsPhi(fill, z="m"):
 
     nLay1 = 0
     mapCurr = {}
-    for k in phiMod.keys():
+    for k in list(phiMod.keys()):
         mapCurr[k] = []
 
 
@@ -279,7 +279,7 @@ def getCurrentVsPhi(fill, z="m"):
                 if(zSide == z):mapCurr[key].append(getLeakageCurrent(float(row.rsplit('LAY1 ')[1]), T_sensor))
 
 
-    for k in  mapCurr.keys():
+    for k in  list(mapCurr.keys()):
         if(len(mapCurr[k])!=0):phiMod[k] = sumElList(mapCurr[k])/len(mapCurr[k])
         else:phiMod[k]
 
@@ -289,7 +289,7 @@ def getCurrentVsPhi(fill, z="m"):
 
 def AddDict(dict1, dict2, sign = -1):
     phiMod = {}
-    for k in dict1.keys():
+    for k in list(dict1.keys()):
         phiMod[k] = dict2[k] - dict1[k]
             
     return phiMod
@@ -369,7 +369,7 @@ def plotCurrents(Currents, fill_nums, plotType="Leakage"):
         I_leak_L3_array = array('f',  [(Currents[str(f)].I_leak_LAY3 - Currents[str(fill_nums[0])].I_leak_LAY3) for f in fill_nums])
         I_leak_L4_array = array('f',  [(Currents[str(f)].I_leak_LAY4 - Currents[str(fill_nums[0])].I_leak_LAY4) for f in fill_nums])
     elif(plotType=="DeltaROC"):
-        print "DIROC"
+        print("DIROC")
         I_leak_L1_array = array('f',  [(Currents[str(f)].I_ROC_LAY1 - Currents[str(fill_nums[0])].I_ROC_LAY1) for f in fill_nums])
         I_leak_L2_array = array('f',  [(Currents[str(f)].I_ROC_LAY2 - Currents[str(fill_nums[0])].I_ROC_LAY2) for f in fill_nums])
         I_leak_L3_array = array('f',  [(Currents[str(f)].I_ROC_LAY3 - Currents[str(fill_nums[0])].I_ROC_LAY3) for f in fill_nums])
@@ -553,7 +553,7 @@ def printCurrentVsLumi(currents, fill_lumis, curTypeObj, Xaxis="lumi"):
     leg.SetBorderSize(0)
 
     nLayers = I.GetListOfGraphs().GetSize()
-    print "How many layers? ", nLayers
+    print("How many layers? ", nLayers)
 
     if(nLayers==2):
         if(barrelOrEndCap == "EndCap"):

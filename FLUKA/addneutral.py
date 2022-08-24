@@ -17,8 +17,8 @@ with open(modulepos+"/"+modulepos+"_neut_6500GeV_"+phase+".txt", "r") as neutfil
    with open(modulepos+"/"+modulepos+"_aneut_6500GeV_"+phase+".txt", "r") as aneutfile:  
       aneutlines = aneutfile.read().splitlines();
       for i, neutline in enumerate(neutfile):
-			print("str(i) " + str(i))
-			print("neutline"+str(neutline.split()[1]))
-			print("aneutline"+str(aneutlines[i].split('\t')[1] ))
+			print(("str(i) " + str(i)))
+			print(("neutline"+str(neutline.split()[1])))
+			print(("aneutline"+str(aneutlines[i].split('\t')[1] )))
 			writefile.write(str(neutline.split()[0]) + '\t' + str('%.4E' % ( Decimal(neutline.split()[1]) + Decimal(aneutlines[i].split('\t')[1])) + '\n' ))
 writefile.close()

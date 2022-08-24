@@ -21,7 +21,7 @@ def intLumi(output_file_name):
         goodFillsFile = open('FillInfo_TotLumi.txt', 'r+')
         for row in goodFillsFile.readlines():
             if str(fillNum) + "  " in row:
-                print "Fill: %s"%fillNum
+                print("Fill: %s"%fillNum)
                 query= """
                 select lhcfill, begintime, endtime
                 from CMS_RUNTIME_LOGGER.RUNTIME_SUMMARY

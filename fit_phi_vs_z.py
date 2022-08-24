@@ -1,4 +1,4 @@
-import fit_fluka
+from . import fit_fluka
 import ROOT as rt
 from collections import namedtuple
 import os

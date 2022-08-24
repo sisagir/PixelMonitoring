@@ -205,17 +205,17 @@ plt.savefig("cooling_time_HC_summary.pdf",bbox_inches='tight')
 
 for hc in hc_temperature:
   temp=10
-  print("%s below %sC   %s"%(hc,temp, (getTimesBelow(temp,hc_temperature[hc]))))
+  print(("%s below %sC   %s"%(hc,temp, (getTimesBelow(temp,hc_temperature[hc])))))
   temp=5                
-  print("%s below %sC   %s"%(hc,temp, (getTimesBelow(temp,hc_temperature[hc]))))
+  print(("%s below %sC   %s"%(hc,temp, (getTimesBelow(temp,hc_temperature[hc])))))
   temp=0                
-  print("%s below %sC   %s"%(hc,temp, (getTimesBelow(temp,hc_temperature[hc]))))
+  print(("%s below %sC   %s"%(hc,temp, (getTimesBelow(temp,hc_temperature[hc])))))
   temp=-5               
-  print("%s below %sC   %s"%(hc,temp, (getTimesBelow(temp,hc_temperature[hc]))))
+  print(("%s below %sC   %s"%(hc,temp, (getTimesBelow(temp,hc_temperature[hc])))))
   temp=-10              
-  print("%s below %sC   %s"%(hc,temp, (getTimesBelow(temp,hc_temperature[hc]))))
+  print(("%s below %sC   %s"%(hc,temp, (getTimesBelow(temp,hc_temperature[hc])))))
   temp=-18              
-  print("%s below %sC   %s"%(hc,temp, (getTimesBelow(temp,hc_temperature[hc]))))
+  print(("%s below %sC   %s"%(hc,temp, (getTimesBelow(temp,hc_temperature[hc])))))
 # plt.show()
 
 # for hc in hc_temperature:
