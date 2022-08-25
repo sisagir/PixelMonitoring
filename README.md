@@ -6,11 +6,23 @@ git clone git@github.com:fleble/PixelMonitoring.git
 source setup.sh
 ```
 
+
 ### Setup
-After every new login, do:
+After every new login, if you do not use `brilcalc`, do:
 ```bash
 source cmsenv.sh
 ```
+This can be unset only with a new login.
+
+For using `brilcalc`, do:
+```bash
+source brilwsenv.sh
+```
+You can unset this setup by doing:
+```bash
+source unset_brilwsenv.sh
+```
+
 
 ### List of fills with stable beams
 ```bash
@@ -19,6 +31,7 @@ python getFill_TotalLumi.py
 
 Will produce an output file with the list of all fills with stable beams: `FillInfo_TotLumi.txt`
 We can use this file to exclude some fill ranges.
+
 
 ### Get currents
 
@@ -32,6 +45,7 @@ Then produce separate files for Analog/Digital and HV averaged currents.
 ```bash
 python getCurrents.py --BarrelOrEndCap Barrel/EndCap
 ```
+
 
 ### Plot leakage current
 Run the analysis and produce plots and fits with:
