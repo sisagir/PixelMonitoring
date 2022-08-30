@@ -1,7 +1,12 @@
-import ROOT as rt
-import array
 import argparse
-import numpy
+from pathlib import Path
+
+import ROOT
+import array
+import numpy as np
+
+
+ROOT.gROOT.SetBatch(ROOT.kTRUE)
 
 class Chi2ParMinimizer(object):
     def __init__(self, npars, nsize, pars_min, pars_max, include_pars_max = True):
@@ -17,64 +22,148 @@ class Chi2ParMinimizer(object):
             for p_i in range(0,npars):
                 self.pars_step.append((self.pars_max[p_i]-self.pars_min[p_i])/float(self.nsize))
         shape = [self.nsize]*self.npars
-        self.chi2_par_array = numpy.ndarray(shape)
+        self.chi2_par_array = np.ndarray(shape)
         shape.append(self.npars)
-        self.final_par_array = numpy.ndarray(shape)
-        self.final_par_error_array = numpy.ndarray(shape)
+        self.final_par_array = np.ndarray(shape)
+        self.final_par_error_array = np.ndarray(shape)
     
-    def get_par_value(self, indecies):
+    def get_par_value(self, indicies):
         pars_ret = list()
         for p_i in range(0,self.npars):
-            pars_ret.append(self.pars_min[p_i]+indecies[p_i]*self.pars_step[p_i])
+            pars_ret.append(self.pars_min[p_i]+indicies[p_i]*self.pars_step[p_i])
         return pars_ret
     
-    def get_par_indecies(self, pars):
-        indecies_ret = list()
+    def get_par_indicies(self, pars):
+        indicies_ret = list()
         for p_i in range(0,self.npars):
-            indecies_ret.append(int((pars[p_i]-self.pars_min[p_i])/self.pars_step[p_i]+0.1))
-        return indecies_ret
+            indicies_ret.append(int((pars[p_i]-self.pars_min[p_i])/self.pars_step[p_i]+0.1))
+        return indicies_ret
     
     def set_chi2_values(self, par_values, chi2):
-        indecies = tuple(self.get_par_indecies(par_values))
-        self.chi2_par_array[indecies] = chi2
+        indicies = tuple(self.get_par_indicies(par_values))
+        self.chi2_par_array[indicies] = chi2
     
     def get_chi2_values(self, par_values):
-        indecies = tuple(self.get_par_indecies(par_values))
-        return self.chi2_par_array[indecies]
+        indicies = tuple(self.get_par_indicies(par_values))
+        return self.chi2_par_array[indicies]
     
     def set_final_pars_values(self, par_values, final_pars, final_par_errors):
-        indecies_for_chi2 = self.get_par_indecies(par_values)
-        indecies_list = indecies_for_chi2[:]
-        indecies_list.append(0)
+        indicies_for_chi2 = self.get_par_indicies(par_values)
+        indicies_list = indicies_for_chi2[:]
+        indicies_list.append(0)
         for i,final_par in enumerate(final_pars):
-            indecies_list[-1] = i
-            indecies = tuple(indecies_list)
-            self.final_par_array[indecies] = final_par
-            self.final_par_error_array[indecies] = final_par_errors[i]
+            indicies_list[-1] = i
+            indicies = tuple(indicies_list)
+            self.final_par_array[indicies] = final_par
+            self.final_par_error_array[indicies] = final_par_errors[i]
     
     def get_final_pars_values(self, par_values):
-        indecies_for_chi2 = self.get_par_indecies(par_values)
-        indecies_list = indecies_for_chi2[:]
-        indecies_list.append(0)
+        indicies_for_chi2 = self.get_par_indicies(par_values)
+        indicies_list = indicies_for_chi2[:]
+        indicies_list.append(0)
         final_pars = list()
         final_par_errors = list()
         for i in range(0,self.npars):
-            indecies_list[-1] = i
-            indecies = tuple(indecies_list)
-            final_pars.append(self.final_par_array[indecies])
-            final_par_errors.append(self.final_par_error_array[indecies])
+            indicies_list[-1] = i
+            indicies = tuple(indicies_list)
+            final_pars.append(self.final_par_array[indicies])
+            final_par_errors.append(self.final_par_error_array[indicies])
         return [final_pars, final_par_errors]
     
     def minimize(self):
         index_min = self.chi2_par_array.argmin()
-        indecies_min = numpy.unravel_index(index_min, self.chi2_par_array.shape)
-        pars_min = self.get_par_value(indecies_min)
+        indicies_min = np.unravel_index(index_min, self.chi2_par_array.shape)
+        pars_min = self.get_par_value(indicies_min)
         chi2_min = self.chi2_par_array.min()
         final_pars = self.get_final_pars_values(pars_min)
         return {"pars": pars_min, "chi2": chi2_min, "final_pars": final_pars[0], "final_par_errors": final_pars[1]}
     
+
+def __get_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-i', '--input_root_file_name',
+        help='Input ROOT file with fluence field',
+        default="fluence/fluence_field_phase1_6500GeV.root"
+    )
+    parser.add_argument(
+        '-n', '--function-name',
+        dest='f_name',
+        help='function name',
+    )
+    parser.add_argument(
+        '-e', '--function-expr',
+        dest='f_expr',
+        help='function expression',
+        default="([0]*x+[1])/(1+y*y/([2]*x+[3])/([2]*x+[3]))+[4]*pow(x,[5])+[6]",
+    )
+    parser.add_argument(
+        '--xmin',
+        dest='xmin',
+        help='xmin',
+    )
+    parser.add_argument(
+        '--xmax',
+        dest='xmax',
+        help='xmax',
+    )
+    parser.add_argument(
+        '-p', '--pars',
+        dest='pars',
+        help='pars',
+    )
+    parser.add_argument(
+        '--pars-range-min',
+        dest='pars_range_min',
+        help='pars'
+    )
+    parser.add_argument(
+        '--pars-range-max',
+        dest='pars_range_max',
+        help='pars',
+    )
+    parser.add_argument(
+        '--npars',
+        help='pars',
+    )
+    parser.add_argument(
+        '-d', '--proj-direction',
+        help='proj direction',
+    )
+    parser.add_argument(
+        '-x', '--xval',
+        help='xval',
+    )
+    parser.add_argument(
+        '-f', '--full',
+        action='store_true',
+        help='full',
+    )
+    parser.add_argument(
+        '-b', '--batch',
+        action='store_true',
+        help='batch',
+    )
+    parser.add_argument(
+        '--dir',
+        help='directory',
+    )
+    parser.add_argument(
+        '--no-args',
+        dest='noargs',
+        action='store_true',
+    )
+    parser.add_argument(
+        '--check',
+        action='store_true',
+        help='check',
+    )
+
+    return parser.parse_args()
+
+
 def fit_fl_proj(directory, fluka_proj, function, xmin, xmax, set_pars = [], set_par_limits = []):
-    fit_func = rt.TF1("fit_func", function["expr"], 
+    fit_func = ROOT.TF1("fit_func", function["expr"],
             fluka_proj.GetXaxis().GetXmin(), fluka_proj.GetXaxis().GetXmax())
     if len(set_pars) > 0:
         fit_func.SetParameters(array.array('d',set_pars))
@@ -82,17 +171,18 @@ def fit_fl_proj(directory, fluka_proj, function, xmin, xmax, set_pars = [], set_
         for i,pl in enumerate(set_par_limits):
             fit_func.SetParLimits(i,pl[0],pl[1])
     fit_func.SetNpx(10000)
-    c1 = rt.TCanvas("c1","c1",1000,800)
+    c1 = ROOT.TCanvas("c1","c1",1000,800)
     c1.Draw()
-    rt.gStyle.SetOptStat(00000)
+    ROOT.gStyle.SetOptStat(00000)
     fluka_proj.GetXaxis().SetRangeUser(xmin,xmax)
     for i in range(0,1): fluka_proj.Fit(fit_func, "", "", xmin, xmax)
     range_val = "z" if "r" in fluka_proj.GetName() else "r"
     filename = "%s_%s_%s_range_%smm_%smm"%(fluka_proj.GetName(), 
             function["name"], range_val, int(xmin*10), int(xmax*10))
     filename = filename.replace('-','minus')
+    txt_file_name = "%s/%s.txt" % (directory,filename)
     c1.SaveAs("%s/%s.pdf"%(directory,filename))
-    fout = open("%s/%s.txt"%(directory,filename), "w+")
+    fout = open(txt_file_name, "w+")
     fout.write(str(function)+'\n')
     for i in range(0,fit_func.GetNpar()):
         fout.write('p%s = %4.4e\n'%(i, fit_func.GetParameter(i)))
@@ -100,7 +190,10 @@ def fit_fl_proj(directory, fluka_proj, function, xmin, xmax, set_pars = [], set_
         fout.write("chi2 = %4.4f"%(fit_func.GetChisquare()/fit_func.GetNDF()))
     else:
         fout.write("chi2 = Nan")
+    print("%s has been written." % txt_file_name)
+
     return [fluka_proj, fit_func]
+
 
 def get_proj(fluka_th2d, x_val, proj_direction = "r"):
     if proj_direction == "r":
@@ -110,15 +203,17 @@ def get_proj(fluka_th2d, x_val, proj_direction = "r"):
         bin_x = fluka_th2d.GetXaxis().FindBin(x_val)
         return fluka_th2d.ProjectionY("fluka_r_%s_mm"%int(x_val*10), bin_x, bin_x)
 
-def get_fluka_field():
-    f = rt.TFile.Open("FLUKA/fluence_field.root")
-    in_hist = f.Get('fluence_allpart_6500GeV_phase1')
+
+def get_fluka_field(input_root_file_name):
+    f = ROOT.TFile.Open(input_root_file_name)
+    in_hist = f.Get('fluence_allpart')
     h = in_hist.Clone()
     h.SetDirectory(0)
     return h
 
+
 def get_tf2_fluka_fit(expr, pars, rmin, rmax, zmin, zmax):
-    tf2 = rt.TF2("fluka_field_fit", expr, rmin, rmax, zmin, zmax)
+    tf2 = ROOT.TF2("fluka_field_fit", expr, rmin, rmax, zmin, zmax)
     for i in range(0, tf2.GetNpar()):
         tf2.SetParameter(i,pars[i])
     return tf2
@@ -130,18 +225,21 @@ def get_fluka_field_value(fluka_field, r, z):
     print("FLUKA(r=%4.2f,z=%4.2f) = %s"%(r,z,val))
     return val
 
+
 def get_tf2_fluka_fit_value(tf2_fluka_field, r, z):
     val = tf2_fluka_field.Eval(r,z)
     print("FLUKA_FIT(r=%4.2f,z=%4.2f) = %s"%(r,z,val))
     return val
+
 
 def get_fluka_value_diff(fluka_field, tf2_fluka_field, r, z):
     val = get_fluka_field_value(fluka_field, r, z) - get_tf2_fluka_fit_value(tf2_fluka_field, r, z)
     print("FLUKA - FLUKA_FIT (r=%4.2f,z=%4.2f) = %s"%(r,z,val))
     return val
 
+
 def fit_fluence(directory, fluka_th2d, function, xmin, xmax, set_opts = "QN",set_pars = [], set_par_limits = []):
-    fit_func = rt.TF2("fit_func", function["expr"], xmin[0], xmax[0], xmin[1], xmax[1])
+    fit_func = ROOT.TF2("fit_func", function["expr"], xmin[0], xmax[0], xmin[1], xmax[1])
     if len(set_pars) > 0:
         fit_func.SetParameters(array.array('d',set_pars))
     if len(set_pars) > 0:
@@ -150,9 +248,9 @@ def fit_fluence(directory, fluka_th2d, function, xmin, xmax, set_opts = "QN",set
         for i,pl in enumerate(set_par_limits):
             fit_func.SetParLimits(i,pl[0],pl[1])
     fit_func.SetNpx(10000)
-    c1 = rt.TCanvas("c1","c1",1000,800)
+    c1 = ROOT.TCanvas("c1","c1",1000,800)
     # c1.Draw()
-    rt.gStyle.SetOptStat(00000)
+    ROOT.gStyle.SetOptStat(00000)
     fluka_th2d.GetXaxis().SetRangeUser(xmin[0], xmax[0])
     fluka_th2d.GetYaxis().SetRangeUser(xmin[1], xmax[1])
     for i in range (0,1): fluka_th2d.Fit(fit_func, set_opts, "colz")
@@ -160,7 +258,8 @@ def fit_fluence(directory, fluka_th2d, function, xmin, xmax, set_opts = "QN",set
             function["name"], int(xmin[0]*10), int(xmax[0]*10), int(xmin[1]*10), int(xmax[1]*10))
     filename = filename.replace('-','minus')
     # c1.SaveAs("%s/%s.pdf"%(directory, filename))
-    fout = open("%s/%s.txt"%(directory, filename), "w+")
+    txt_file_name = "%s/%s.txt" % (directory,filename)
+    fout = open(txt_file_name, "w+")
     fout.write(str(function)+'\n')
     for i in range(0,fit_func.GetNpar()):
         fout.write('p%s = %4.4e\n'%(i, fit_func.GetParameter(i)))
@@ -168,11 +267,16 @@ def fit_fluence(directory, fluka_th2d, function, xmin, xmax, set_opts = "QN",set
         fout.write("chi2 = %4.4f"%(fit_func.GetChisquare()))
     else:
         fout.write("chi2 = Nan")
+    print("%s has been written." % txt_file_name)
     
     return [fluka_th2d, fit_func]
 
+
 def main(args):
-    fl_2d_histo = get_fluka_field()
+
+    fl_2d_histo = get_fluka_field(args.input_root_file_name)
+
+    Path(args.dir).mkdir(parents=True, exist_ok=True)
 
     if args.noargs:
         # function = {"name": "radius", "expr": "[0]*pow(x,-[1])*exp(-[2]*x)"}
@@ -185,7 +289,7 @@ def main(args):
         # function = {"name": "zcoord", "expr": "[0]*exp(-x*x/(2*[1]*[1]))+[2]"}
         # [0]/([2]*sqrt([3]*TMath::Pi())*TMath::Gamma(([3]+1)/2.)/TMath::Gamma([3]/2.)*exp(-([3]+1)/2.*TMath::Log(1+1/[3]*(x-[1])/[2]*(x-[1])/[2]))+[4]
         expr = "[0]/([2]*sqrt([3]*TMath::Pi()))*TMath::Gamma(([3]+1)/2.)/TMath::Gamma([3]/2.)*exp(-([3]+1)/2.*TMath::Log(1+1/[3]*(y-[1])/[2]*(x-[1])/[2]))*pow(x,-[4])*exp(-[5]*x)+[6]"
-        # form = rt.TFormula()
+        # form = ROOT.TFormula()
         # form.Compile(expr)
         # exit()
         function = {"name": "zcoord", "expr": expr}
@@ -253,32 +357,6 @@ def main(args):
     
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-n', '--function-name', dest='f_name', action='store', help='function name')
-    parser.add_argument('-e', '--function-expr', dest='f_expr', action='store', help='function expression', 
-                        default="([0]*x+[1])/(1+y*y/([2]*x+[3])/([2]*x+[3]))+[4]*pow(x,[5])+[6]")
-    parser.add_argument('--xmin',            dest='xmin',   action='store', help='xmin')
-    parser.add_argument('--xmax',            dest='xmax',   action='store', help='xmax')
-    parser.add_argument('-p', '--pars',          dest='pars',   action='store', help='pars')
-    parser.add_argument('--pars-range-min',          dest='pars_range_min',   action='store', help='pars')
-    parser.add_argument('--pars-range-max',          dest='pars_range_max',   action='store', help='pars')
-    parser.add_argument('--npars',          dest='npars',   action='store', help='pars')
-    parser.add_argument('-d', '--proj-dir',      dest='proj_direction',   action='store', help='proj direction')
-    parser.add_argument('-x', '--xval',      dest='xval',   action='store', help='xval')
-    parser.add_argument('-f', '--full',      dest='full',   action='store_true', help='full')
-    parser.add_argument('-b', '--batch',dest='batch', action='store_true', help='batch')
-    parser.add_argument('--dir',dest='dir', action='store', help='directory')
-    parser.add_argument('--no-args',dest='noargs', action='store_true', help='batch')
-    parser.add_argument('--check',dest='check', action='store_true', help='check')
 
-    args = parser.parse_args()
+    args = __get_arguments()
     main(args)
-
-
-# python fit_fluka.py -n "simult" -e "[0]/([2]*sqrt([3]*TMath::Pi()))*TMath::Gamma(([3]+1)/2.)/TMath::Gamma([3]/2.)*exp(-([3]+1)/2.*TMath::Log(1+1/[3]*(x-[1])/[2]*(x-[1])/[2]))*pow(x,-[4])*exp(-[5]*x)+[6]" --xmin '0,-30' --xmax '16,30' -p '100,0,30,0.2,-1.7,-0.01,0.1' --dir fit_fluka/simult -b -f
-# python fit_fluka.py -n "simult" -e "[0]/([2]*sqrt([3]*TMath::Pi()))*TMath::Gamma(([3]+1)/2.)/TMath::Gamma([3]/2.)*exp(-([3]+1)/2.*TMath::Log(1+1/[3]*(y-[1])/[2]*(x-[1])/[2]))*pow(x,-[4])*exp(-[5]*x)+[6]" --xmin '0,-30' --xmax '16,30' -p '100,0,30,0.2,-1.7,-0.01,0.1' --dir fit_fluka/simult -b -f
-# python fit_fluka.py -n "simult" -e "[0]/([2]*sqrt([3]*TMath::Pi()))*TMath::Gamma(([3]+1)/2.)/TMath::Gamma([3]/2.)*exp(-([3]+1)/2.*TMath::Log(1+1/[3]*(y-[1])/[2]*(x-[1])/[2]))*pow(x,-[4])*exp(-[5]*x)+[6]" --xmin '0,-30' --xmax '16,30' -p '10,0,30,0.2,-1.7,-0.01,0.1' --dir fit_fluka/simult -b -f
-# python fit_fluka.py -n "simult" -e "[0]/([2]*sqrt([3]*TMath::Pi()))*TMath::Gamma(([3]+1)/2.)/TMath::Gamma([3]/2.)*exp(-([3]+1)/2.*TMath::Log(1+1/[3]*(y-[1])/[2]*(x-[1])/[2]))*pow(x,-[4])*exp(-[5]*x)+[6]" --xmin '0,-30' --xmax '16,30' -p '10,0,3,0.02,-1.7,-0.01,0.1' --dir fit_fluka/simult -b -f
-# python fit_fluka.py -n "simult" -e "[0]/([2]*sqrt([3]*TMath::Pi()))*TMath::Gamma(([3]+1)/2.)/TMath::Gamma([3]/2.)*exp(-([3]+1)/2.*TMath::Log(1+1/[3]*(y-[1])/[2]*(x-[1])/[2]))*pow(x,-[4])*exp(-[5]*x)+[6]" --xmin '0,-30' --xmax '16,30' -p '10,0.1,3,0.02,-1.7,-0.01,0.1' --dir fit_fluk/simult -b -f
-# python fit_fluka.py -n "simult" -e "[0]/([2]*sqrt([3]*TMath::Pi()))*TMath::Gamma(([3]+1)/2.)/TMath::Gamma([3]/2.)*exp(-([3]+1)/2.*TMath::Log(1+1/[3]*(y-[1])/[2]*(x-[1])/[2]))*pow(x,-[4])*exp(-[5]*x)+[6]" --xmin '0,-30' --xmax '16,30' -p '160,0.0,15,0.02,-1.7,-0.01,0.01' --dir fit_fluka/simult -b -f
-# python fit_fluka.py -n "simult" -e "[0]/([2]*sqrt([3]*TMath::Pi()))*TMath::Gamma(([3]+1)/2.)/TMath::Gamma([3]/2.)*exp(-([3]+1)/2.*TMath::Log(1+1/[3]*(y-[1])/[2]*(x-[1])/[2]))*pow(x,-[4])*exp(-[5]*x)+[6]" --xmin '2.5,-30' --xmax '3.5,30' --dir fit_fluka/simult -b -f --npars 7 --pars-range-min '20,0,10,0,-3,-0.1,0.1' --pars-range-max '200,5,30,5,3,0.1,0.5'
