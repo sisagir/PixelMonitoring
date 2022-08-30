@@ -1,15 +1,14 @@
-import os
 from inspect import cleandoc as multi_line_str
-import cx_Oracle
-import datetime
+from pathlib import Path
 import argparse 
 
+import cx_Oracle
 import datetime as dt
-import pandas as pd 
 
-import utils as utl
+from utils import generalUtils as gUtl
 
-password = utl.get_database_password()
+
+password = gUtl.get_database_password()
 database_name = "cms_omds_adg"
 user_name = "cms_trk_r"
 
@@ -22,7 +21,7 @@ def __get_arguments():
         "-i", "--input_fills_file_name",
         help="Luminosity file",
         required=False,
-        default="fills_info/fills.txt",
+        default="fills_info/fills.csv",
     )
     parser.add_argument(
         "-o", "--output_directory",
@@ -54,8 +53,7 @@ def __get_arguments():
 
 def main(args):
 
-    if not os.path.exists(args.output_directory):
-        os.makedirs(args.output_directory)
+    Path(args.output_directory).mkdir(parents=True, exist_ok=True)
 
     python_time_mask = "%d-%b-%Y %H.%M.%S.%f"
     oracle_time_mask = "DD-Mon-YYYY HH24.MI.SS.FF"
@@ -64,7 +62,7 @@ def main(args):
     cursor = connection.cursor()
     cursor.arraysize=50
 
-    fills_info = pd.read_csv(args.input_fills_file_name)
+    fills_info = gUtl.get_fill_info(args.input_fills_file_name)
     good_fills = fills_info.fill_number.to_list()
 
     for fill in range(args.first_fill, args.last_fill+1):
@@ -76,48 +74,17 @@ def main(args):
             print("Error!")
             exit(0)
 
-        print(fill)
         begin_time = fill_info.start_time.to_list()[0]
-        begin_time = dt.datetime.fromisoformat(begin_time.replace("Z", "+00:00"))
-        print(begin_time)
-        end_time = fill_info.end_time.to_list()[0]
-        end_time = dt.datetime.fromisoformat(end_time.replace("Z", "+00:00"))
-        print(end_time)
-        end_time =  begin_time + datetime.timedelta(0, 600)
+        begin_time = dt.datetime.fromisoformat(fill_info.start_time.to_list()[0])
+        # TODO: Why not using the actual end time of the fill but start time + 10 minutes?
+        # end_time = fill_info.end_time.to_list()[0]
+        end_time =  begin_time + dt.timedelta(0, 600)
         begin_time = begin_time.strftime(python_time_mask)
         end_time = end_time.strftime(python_time_mask)
-        # print "Fill Number: ", fill
-        # print "Begin Time: ", begin_time
-        # print "End Time: ", end_time
 
-        query = multi_line_str(
-            """
-            SELECT fillnum, starttime, stoptime
-            FROM {schema}.cmsrunsummary
-            WHERE starttime IS NOT NULL
-                  AND fillnum IS NOT NULL
-                  AND fillnum = {fill}
-            """.format(
-                schema=schema,
-                fill=fill,
-            )
-        )
-        cursor.execute(query)
-    
-        output = cursor.fetchall()
-    
-        begin_time = output[0][1]
-        end_time = output[0][2]
-        print(begin_time)
-        print(end_time)
-        print("")
-        exit(0)
-
-
-    
         query = multi_line_str("""
             WITH cables AS (
-                SELECT DISTINCT substr(lal.alias,INSTR(lal.alias,  '/', -1, 2)+1) cable, id dpid, cd
+                SELECT DISTINCT SUBSTR(lal.alias,INSTR(lal.alias,  '/', -1, 2)+1) cable, id dpid, cd
                     FROM (
                         SELECT max(since) AS cd, alias
                         FROM cms_trk_dcs_pvss_cond.aliases
@@ -132,8 +99,8 @@ def main(args):
                 SELECT dpid, max(change_date) itime
                 FROM cms_trk_dcs_pvss_cond.fwcaenchannel caen
                 WHERE change_date
-                          BETWEEN to_timestamp('{start_time}', '{oracle_time_mask}')
-                          AND to_timestamp('{end_time}', '{oracle_time_mask}')
+                          BETWEEN TO_TIMESTAMP('{start_time}', '{oracle_time_mask}')
+                          AND TO_TIMESTAMP('{end_time}', '{oracle_time_mask}')
                       AND actual_Imon is not NULL
                 GROUP BY dpid
             ),

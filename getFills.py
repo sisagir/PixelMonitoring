@@ -1,8 +1,8 @@
 import argparse
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
+import datetime as dt
 
 from omsapi import OMSAPI
 
@@ -14,12 +14,6 @@ def __get_arguments():
         help="Output directory name",
         required=False,
         default="./fills_info/",
-    )
-    parser.add_argument(
-        "-suffix", "--output_file_name_suffix",
-        help="Output file name",
-        required=False,
-        default="",
     )
     parser.add_argument(
         "-ff", "--first_fill",
@@ -71,10 +65,11 @@ def __get_data(first_fill, last_fill, attributes):
     return data
 
 
-def __add_integrated_lumi(data, lumi_column_name="delivered_lumi"):
-    lumi = data[lumi_column_name]
-    integrated_lumi = np.cumsum(lumi)
-    data["integrated_" + lumi_column_name] = integrated_lumi
+def __format_time(data, column_names):
+    time_mask = "%Y-%m-%d %H:%M:%S.%f"
+    func = lambda x: dt.datetime.fromisoformat(x.replace("Z", "+00:00")).strftime(time_mask)
+    for column_name in column_names:
+        data[column_name] = data[column_name].apply(func)
     return data
     
 
@@ -85,15 +80,12 @@ def main():
 
     attributes = ["delivered_lumi", "fill_number", "start_time", "end_time"]
     data = __get_data(args.first_fill, args.last_fill, attributes)
-    data = __add_integrated_lumi(data)
+    data = __format_time(data, ("start_time", "end_time"))
     data.drop(columns="delivered_lumi", inplace=True)
     
-    output_file_name = args.output_directory + "/" + "fills" + args.output_file_name_suffix + ".txt"
+    output_file_name = args.output_directory + "/" + "fills.csv"
     data.to_csv(output_file_name, index=False, columns=["fill_number", "start_time", "end_time"])
             
-    output_file_name = args.output_directory + "/" + "fills_with_integrated_lumi" + args.output_file_name_suffix + ".txt"
-    data.to_csv(output_file_name, index=False)
-
 
 if __name__ == "__main__":
    main()

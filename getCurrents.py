@@ -18,10 +18,13 @@
 # ****************************************************************
 
 
+# TODO: The code breaks for phase 0
+
 import os
 import argparse
-import copy
-from numberOfROCs import *
+
+from utils.pixelDesignUtils import get_number_of_rocs
+from utils import eraUtils as eraUtl
 
 
 def __get_arguments():
@@ -56,15 +59,6 @@ def __get_arguments():
         choices=["Barrel", "EndCap"],
         required=True,
     )
-    parser.add_argument(
-        "-p", "--phase",
-        help="Indicate if you wish to access current informations for"
-             "phase0 or phase1 pixel detector.",
-        choices=[0, 1],
-        type=int,
-        default=1,
-        required=False,
-    )
 
     return parser.parse_args()
 
@@ -75,6 +69,9 @@ def main(args):
         os.makedirs(args.output_directory)
 
     for fill in range(args.first_fill, args.last_fill+1):
+
+        phase = eraUtl.get_phase_from_fill(fill)
+
         HV_L1 = {}
         HV_L2 = {}
         HV_L3_ch1 = {}
@@ -88,29 +85,28 @@ def main(args):
         ### Open file and get bias, analog and digital currents
         currents_file = args.input_directory_name + str(fill) + "_" + args.sub_detector + ".txt"
         if not os.path.exists(currents_file):
-            print("%s not found. Skipping." % currents_file)
             continue
 
         f = open(currents_file, "r+")
         lines = f.readlines()
         ### Opening output files
         prefix = args.output_directory + str(fill) + "_" + args.sub_detector
-        HVfile_ = prefix + "_HV_ByLayer.txt"
-        anafile_ = prefix + "_Ana.txt"
-        anafilePerRoc_ = prefix + "_AnaPerRoc.txt"
-        digfile_ = prefix + "_Dig.txt"
+        HVfile_name = prefix + "_HV_ByLayer.txt"
+        anafile_name = prefix + "_Ana.txt"
+        anafilePerRoc_name = prefix + "_AnaPerRoc.txt"
+        digfile_name = prefix + "_Dig.txt"
 
 
-        HVFile = open(HVfile_, "w")
-        anaFile = open(anafile_, "w")
-        anaFilePerRoc = open(anafilePerRoc_, "w")
-        digFile = open(digfile_, "w")
+        HVFile = open(HVfile_name, "w")
+        anaFile = open(anafile_name, "w")
+        anaFilePerRoc = open(anafilePerRoc_name, "w")
+        digFile = open(digfile_name, "w")
 
         for l in lines:
             line = l.split()
             sector = line[0].rsplit('/')[0].strip()
             current =  line[1]
-            if args.phase == 0:
+            if phase == 0:
                 if "LAY1/channel002" in l:
                     HV_L1[sector] = current
                 elif("LAY1/channel003" in l):
@@ -119,9 +115,6 @@ def main(args):
                     HV_L3_ch1[sector] = current
                 elif("LAY3/channel003" in l):
                     HV_L3_ch2[sector] = current
-                #else:
-                #    print l
-                #    raise NotImplementedError
 
             else:
                 if "LAY14/channel002" in l:
@@ -138,29 +131,17 @@ def main(args):
                     HV_L2[line[0].rsplit('2_')[0].strip()+ "2"] = current
                 elif("_D3_" in l and ("channel002" in l or "channel003" in l)):
                     HV_L3[line[0].rsplit('3_')[0].strip()+ "3"] = current
-                #else:
-                #    print l
-                #    raise NotImplementedError
-
 
             if "channel000" in l:
                 digital[sector] = current
             elif "channel001" in l:
                 analog[sector] = current
-            #else:
-            #    print l
-            #    raise NotImplementedError
 
+        numberOfRocs = get_number_of_rocs(phase, args.sub_detector)
 
-
-        if args.phase == 0:
-            if(args.sub_detector=="Barrel"): numberOfRocs=copy.deepcopy(numberOfRocsBarrel)
-            else: numberOfRocs=numberOfRocsEndCap
+        if phase == 0:
             [HVFile.write(k + " " + str.format("{0:.4f}", float(HV_L1[k])/float(numberOfRocs[k]) ) + "\n") for k in HV_L1.keys() ]
             [HVFile.write(k + " " + str.format("{0:.4f}", float(HV_L2[k])/float(numberOfRocs[k]) ) + "\n") for k in HV_L2.keys() ]
-            for k in HV_L3_ch1.keys():
-                HV_L3_ch2[k]
-                numberOfRocs[k]
             [HVFile.write(k + " " + str.format("{0:.4f}", (float(HV_L3_ch1[k]) + float(HV_L3_ch2[k]) )/float(numberOfRocs[k]) ) + "\n") for k in HV_L3_ch1.keys() ]
             [digFile.write(k + " " + str.format("{0:.4f}", float(digital[k])) + "\n") for k in digital.keys() ]
             [anaFile.write(k + " " + str.format("{0:.4f}", float(analog[k]) ) + "\n") for k in analog.keys() ]
@@ -171,8 +152,6 @@ def main(args):
             ]
 
         else:
-            if(args.sub_detector=="Barrel"): numberOfRocs=numberOfRocsBarrelPhase1
-            else: numberOfRocs=numberOfRocsEndCapPhase1
             [HVFile.write(k + " " + str.format("{0:.4f}", float(HV_L1[k])/float(numberOfRocs[k]) ) + "\n") for k in HV_L1.keys() ]
             [HVFile.write(k + " " + str.format("{0:.4f}", float(HV_L2[k])/float(numberOfRocs[k]) ) + "\n") for k in HV_L2.keys() ]
             for k in HV_L3.keys():
@@ -195,6 +174,10 @@ def main(args):
         digFile.close()
         anaFile.close()
         anaFilePerRoc.close()
+
+        for file_name in (HVfile_name, anafile_name, anafilePerRoc_name, digfile_name):
+            print("%s has been saved." % file_name)
+        print("")
 
 
 if __name__ == "__main__":
