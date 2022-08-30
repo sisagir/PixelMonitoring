@@ -1,18 +1,19 @@
 # Pixel monitoring tools
 
-### Installation
+## Installation
+To simplify the environment setting, we advise to install the code on `lxplus` or anywhere else where you have access to `cvmfs` (see Section `Setup environment`)
 ```bash
 git clone git@github.com:fleble/PixelMonitoring.git
 source setup.sh
 ```
 
 
-### Setup
+## Setup environment
 After every new login, if you do not use `brilcalc`, do:
 ```bash
 source setenv.sh
 ```
-This can be unset only with a new login.
+This can be unset only with a new login. 
 
 For using `brilcalc`, do:
 ```bash
@@ -22,9 +23,10 @@ You can unset this setup by doing:
 ```bash
 source unset_brilwsenv.sh
 ```
+This will only work if you have access to `cvmfs`.
 
 
-### List of fills with stable beams
+## List of fills with stable beams
 ```bash
 python getFill_TotalLumi.py
 ```
@@ -33,7 +35,7 @@ Will produce an output file with the list of all fills with stable beams: `FillI
 We can use this file to exclude some fill ranges.
 
 
-### Get currents
+## Get currents
 
 First get currents from Timber with:
 ```bash
@@ -47,7 +49,7 @@ python getCurrents.py --BarrelOrEndCap Barrel/EndCap
 ```
 
 
-### Plot leakage current
+## Plot leakage current
 Run the analysis and produce plots and fits with:
 ```bash
 python plotLeakageCurrent.py --BarrelOrEndCap Barrel/EndCap
