@@ -10,7 +10,7 @@ source setup.sh
 ### Setup
 After every new login, if you do not use `brilcalc`, do:
 ```bash
-source cmsenv.sh
+source setenv.sh
 ```
 This can be unset only with a new login.
 
