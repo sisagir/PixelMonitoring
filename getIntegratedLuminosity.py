@@ -5,7 +5,7 @@ import argparse
 import numpy as np
 import pandas as pd
 
-import utils as utl
+from utils import pythonUtils as pyUtl
 
 
 
@@ -54,7 +54,7 @@ def get_lumi(fill_begin, fill_end):
             end=fill_end,
             # output_file=brilcalc_output_file_name,
         )
-    output = utl.run_bash_command(bash_command).split("\n")[1:-3]
+    output = pyUtl.run_bash_command(bash_command).split("\n")[1:-3]
     output[0] = output[0][1:]
     output = functools.reduce(lambda x, y: x + "\n" + y, output)
 
@@ -88,7 +88,7 @@ def main(args):
     df = cast_lumi_to_inverse_fb(df)
     df = add_integrated_lumi(df)
 
-    output_file_name = args.output_directory + "/" + "integrated_luminosity_per_fill" + args.output_file_name_suffix + ".txt"
+    output_file_name = args.output_directory + "/" + "integrated_luminosity_per_fill" + args.output_file_name_suffix + ".csv"
     df.to_csv(output_file_name, index=False)
 
 
