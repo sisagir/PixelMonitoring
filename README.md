@@ -36,7 +36,8 @@ For all scripts, learn about its usage with `python script.py -h`.
 | `getIntegratedLuminosity.py`  | Reads instantaneous and integrated lumi using `brilcalc` and writes it to an output file (default `fills_info/integrated_luminosity_per_fill.csv`). |
 | `getCurrentsFromDB.py`        | Reads the currents from the `cms_omds_adg` Oracle database and write one file per fill in `currents/from_database/`. |
 | `getCurrents.py`              | Reads currents from database and writes digital, analog, analog per ROC and HV per ROC currents (default in `currents/processed/`). |
-| `getPLCAirTemperatures.py`    | Reads temperatures from the `cms_omds_adg` Oracle database and writes one file per fill (default in `temperatures/`). |
+| `getPLCAirTemperatures.py`    | Reads temperatures from the `cms_omds_adg` Oracle database and writes one file per fill (default in `temperatures/air/`). |
+| `getAnnealingTemperatures.py` | Reads temperatures from the `cms_omds_adg` Oracle database and writes one file per temperature sensor, each row with the average temperature of one day (default in `temperatures/annealing/`). |
 | `getFluenceField.py`          | Reads ASCII FLUKA file, creates txt files with equivalent information (default in `fluence/txt_files/`) and creates a ROOT file with the 2D fluence field histogram `F(r, z)` for different particles (default `fluence/fluence_field_phase1_6500GeV.root`). Units are stored in a txt file (default `fluence/fluence_field_phase1_6500GeV_units.txt`). |
 | `getFluence.py`               | Reads all particles fluence field from ROOT file for given coordinates `r` and `z` and outputs the fluence. |
 | `fitFluenceField.py`          | Fit the all particles fluence field from output of `getFluenceField.py`. Command line examples can be found in `getFluenceField.sh`. |
