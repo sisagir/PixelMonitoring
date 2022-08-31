@@ -197,9 +197,9 @@ def main(args):
     #txt_files = ["symtestzminus3/symtestzminus3_allpart_6500GeV_phase1.txt", "symtestzminus3/symtestzminus3_neut_6500GeV_phase1.txt", "symtestzminus3/symtestzminus3_aneut_6500GeV_phase1.txt", "symtestzminus3/symtestzminus3_prot_6500GeV_phase1.txt", "symtestzminus3/symtestzminus3_aprot_6500GeV_phase1.txt", "symtestzminus3/symtestzminus3_pions_6500GeV_phase1.txt"]
     # percerrtxt_files = ["symtestzminus3/symtestzminus3_allpart_6500GeV_phase1_perc_errors.txt", "symtestzminus3/symtestzminus3_neut_6500GeV_phase1_perc_errors.txt", "symtestzminus3/symtestzminus3_aneut_6500GeV_phase1_perc_errors.txt", "symtestzminus3/symtestzminus3_prot_6500GeV_phase1_perc_errors.txt", "symtestzminus3/symtestzminus3_aprot_6500GeV_phase1_perc_errors.txt", "symtestzminus3/symtestzminus3_pions_6500GeV_phase1_perc_errors.txt"]
 
-    # write_txt_files(args.input_ascii_file_name, txt_file_names)
-    # sum_txt_files(input_charged_txt_file_names, output_charged_txt_file_name)
-    # sum_txt_files(input_neutral_txt_file_names, output_neutral_txt_file_name)
+    write_txt_files(args.input_ascii_file_name, txt_file_names)
+    sum_txt_files(input_charged_txt_file_names, output_charged_txt_file_name)
+    sum_txt_files(input_neutral_txt_file_names, output_neutral_txt_file_name)
 
     fluence_file = ROOT.TFile.Open(output_root_file_name, "RECREATE")
     for txt_file_name in all_txt_file_names:
