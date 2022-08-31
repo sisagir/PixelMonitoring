@@ -27,7 +27,7 @@ def __get_arguments():
         "-o", "--output_directory",
         help="Output directory name",
         required=False,
-        default="./temperatures/",
+        default="./temperatures/air/",
     )
     parser.add_argument(
         "-suffix", "--output_file_name_suffix",
@@ -105,7 +105,7 @@ def main(args):
         cursor.execute(query)
         output = cursor.fetchall()
 
-        temperature_file_name = args.output_directory + "/" + str(fill) + "_air.txt"
+        temperature_file_name = args.output_directory + "/" + str(fill) + ".txt"
         with open(temperature_file_name, "w+") as temperature_file:
             for row in output:
                 temperature_file.write(str(row[0]) + "   " + str(row[1]) + "   " + str(row[2])+ "\n")
