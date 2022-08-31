@@ -33,7 +33,7 @@ def __get_arguments():
         "-c", "--input_currents_directory",
         help="Currents directory",
         required=False,
-        default="./txt",
+        default="./currents/processed",
     )
     parser.add_argument(
         "-b", "--bad_fills_file_name",
@@ -45,7 +45,7 @@ def __get_arguments():
         "-o", "--output_directory",
         help="Output directory name",
         required=False,
-        default="./plots/leakage_current",
+        default="./plots/currents",
     )
     parser.add_argument(
         "-ff", "--first_fill",

@@ -27,7 +27,7 @@ def __get_arguments():
         "-o", "--output_directory",
         help="Output directory name",
         required=False,
-        default="./currents/",
+        default="./currents/from_database",
     )
     parser.add_argument(
         "-ff", "--first_fill",

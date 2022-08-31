@@ -84,7 +84,7 @@ def main(args):
 
         query = multi_line_str("""
             WITH ids AS (
-                SELECT id, RTRIM(dpe_name, '.') AS dp, SUBSTR(alias, instr(alias,'/',-1)+1) AS part
+                SELECT id, RTRIM(dpe_name, '.') AS dp, SUBSTR(alias, INSTR(alias, '/', -1)+1) AS part
                 FROM cms_trk_dcs_pvss_cond.aliases, cms_trk_dcs_pvss_cond.dp_name2id
                 WHERE alias LIKE '%Pixel%Air'
                       AND RTRIM(cms_trk_dcs_pvss_cond.aliases.dpe_name, '.') = cms_trk_dcs_pvss_cond.dp_name2id.dpname
@@ -92,9 +92,8 @@ def main(args):
             SELECT part, value_converted, change_date, dpid
             FROM cms_trk_dcs_pvss_cond.tkplcreadsensor, ids
             WHERE ids.id = dpid
-                  AND change_date
-                      BETWEEN TO_TIMESTAMP('{start_time}', '{oracle_time_mask}')
-                              AND TO_TIMESTAMP('{end_time}', '{oracle_time_mask}')
+                  AND change_date BETWEEN TO_TIMESTAMP('{start_time}', '{oracle_time_mask}')
+                                          AND TO_TIMESTAMP('{end_time}', '{oracle_time_mask}')
             ORDER BY part, change_date
             """.format(
                 start_time=begin_time,

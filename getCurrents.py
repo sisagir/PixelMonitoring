@@ -33,13 +33,13 @@ def __get_arguments():
         "-i", "--input_directory_name",
         help="Input directory containing currents files",
         required=False,
-        default="./currents/",
+        default="./currents/from_database",
     )
     parser.add_argument(
         "-o", "--output_directory",
         help="Output directory name",
         required=False,
-        default="./txt/",
+        default="./currents/processed",
     )
     parser.add_argument(
         "-ff", "--first_fill",
