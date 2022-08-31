@@ -5,10 +5,12 @@ from array import array as pyArray
 import ROOT
 
 from utils import eraUtils as eraUtl
+from utils.pythonUtils import run_bash_command
 
 
 def get_database_password(file_name="pwd.txt"):
-    with open(file_name) as f:
+    directory = run_bash_command("echo $PIXEL_MONITORING_DIR")
+    with open(directory + "/" + file_name) as f:
         return f.readline().strip()
 
 
