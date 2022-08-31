@@ -7,7 +7,7 @@ git clone git@github.com:fleble/PixelMonitoring.git
 source setup.sh
 ```
 
-<br></br>
+
 ## Setup environment
 After every new login, if you do not use `brilcalc`, do:
 ```bash
@@ -25,7 +25,7 @@ source unset_brilwsenv.sh
 ```
 This will only work if you have access to `cvmfs`.
 
-<br></br>
+
 ## Overview and decription of all scripts
 
 For all scripts, learn about its usage with `python script.py -h`.
@@ -40,8 +40,8 @@ For all scripts, learn about its usage with `python script.py -h`.
 | `getFluenceField.py`          | Reads ASCII FLUKA file, creates txt files with equivalent information (default in `fluence/txt_files/`) and creates a ROOT file with the 2D fluence field histogram `F(r, z)` for different particles (default `fluence/fluence_field_phase1_6500GeV.root`). Units are stored in a txt file (default `fluence/fluence_field_phase1_6500GeV_units.txt`). |
 | `getFluence.py`               | Reads all particles fluence field from ROOT file for given coordinates `r` and `z` and outputs the fluence. |
 | `fitFluenceField.py`          | Fit the all particles fluence field from output of `getFluenceField.py`. Command line examples can be found in `getFluenceField.sh`. |
-| `plotCurrents.py`             | Plot digital, analog, analog per ROC and leakage current from output of `getCurrents.py`. Default output: `plots/currents` |
-| `plotTemperatures.py`          | Plot temperatures from output of `getPLCAirTemperatures.py` |
+| `plotCurrents.py`             | Plot digital, analog, analog per ROC and leakage current from output of `getCurrents.py`. Default output: `plots/currents`. |
+| `plotTemperatures.py`          | Plot temperatures from output of `getPLCAirTemperatures.py`. |
 
 List of scripts that were not checked:
 * check_2dfit_fluka.py
