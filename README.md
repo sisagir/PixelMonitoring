@@ -7,7 +7,7 @@ git clone git@github.com:fleble/PixelMonitoring.git
 source setup.sh
 ```
 
-
+<br></br>
 ## Setup environment
 After every new login, if you do not use `brilcalc`, do:
 ```bash
@@ -25,32 +25,44 @@ source unset_brilwsenv.sh
 ```
 This will only work if you have access to `cvmfs`.
 
+<br></br>
+## Overview and decription of all scripts
 
-## List of fills with stable beams
-```bash
-python getFill_TotalLumi.py
-```
+For all scripts, learn about its usage with `python script.py -h`.
 
-Will produce an output file with the list of all fills with stable beams: `FillInfo_TotLumi.txt`
-We can use this file to exclude some fill ranges.
+| Script      | Description |
+| :---------- | :---------- |
+| `getFills.py`                 | Reads start and stop timestamps using CMSOMS API for desired fills and writes to an output file (default `fills_info/fills.csv`). |
+| `getIntegratedLuminosity.py`  | Reads instantaneous and integrated lumi using `brilcalc` and writes it to an output file (default `fills_info/integrated_luminosity_per_fill.csv`). |
+| `getCurrentsFromDB.py`        | Reads the currents from the `cms_omds_adg` Oracle database and write one file per fill in `currents/from_database/`. |
+| `getCurrents.py`              | Reads currents from database and writes digital, analog, analog per ROC and HV per ROC currents (default in `currents/processed/`). |
+| `getPLCAirTemperatures.py`    | Reads temperatures from the `cms_omds_adg` Oracle database and writes one file per fill (default in `temperatures/`). |
+| `getFluenceField.py`          | Reads ASCII FLUKA file, creates txt files with equivalent information (default in `fluence/txt_files/`) and creates a ROOT file with the 2D fluence field histogram `F(r, z)` for different particles (default `fluence/fluence_field_phase1_6500GeV.root`). Units are stored in a txt file (default `fluence/fluence_field_phase1_6500GeV_units.txt`). |
+| `getFluence.py`               | Reads all particles fluence field from ROOT file for given coordinates `r` and `z` and outputs the fluence. |
+| `fitFluenceField.py`          | Fit the all particles fluence field from output of `getFluenceField.py`. Command line examples can be found in `getFluenceField.sh`. |
+| `plotCurrents.py`             | Plot digital, analog, analog per ROC and leakage current from output of `getCurrents.py`. Default output: `plots/currents` |
+| `plotTemperatures.py`          | Plot temperatures from output of `getPLCAirTemperatures.py` |
 
+List of scripts that were not checked:
+* check_2dfit_fluka.py
+* CMS_lumi.py
+* fit_phi_vs_z.py
+* fluka_l1.py
+* getPLC_Tpipe.py
+* getPLC_Tpipe_bpix.py
+* mapping_geom.py
+* Module.py
+* modules_geom.py
+* prof_datetime.py
+* ratio_graph.C
+* rogchannel_modules.py
+* rogring_pc.py
+* run3_profile.py
+* run_ileak.sh
+* run_Run3.py
+* SiPixelDetsUpdatedAfterFlippedChange.py
+* SiPixelDetsUpdatedAfterFlippedChange_BPIX.py 
+* temperature.py
+* time_cold_counter.py
+* write_pos_fl.py
 
-## Get currents
-
-First get currents from Timber with:
-```bash
-python getCurrentsFromDB.py --BarrelOrEndCap Barrel/EndCap
-```
-You will be asked for the first fill number and for the last fill number of the range you want to examine. In this way a txt file collecting information on analog, digital and bias currents will be produced by accessing the DB.
-
-Then produce separate files for Analog/Digital and HV averaged currents.
-```bash
-python getCurrents.py --BarrelOrEndCap Barrel/EndCap
-```
-
-
-## Plot leakage current
-Run the analysis and produce plots and fits with:
-```bash
-python plotLeakageCurrent.py --BarrelOrEndCap Barrel/EndCap
-```
