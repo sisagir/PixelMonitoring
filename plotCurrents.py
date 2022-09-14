@@ -20,49 +20,41 @@ def __get_arguments():
     parser.add_argument(
         "-i", "--input_fills_file_name",
         help="Fills file",
-        required=False,
         default="fills_info/fills.csv",
     )
     parser.add_argument(
         "-l", "--input_lumi_file_name",
         help="Luminosity file",
-        required=False,
         default="fills_info/integrated_luminosity_per_fill.csv",
     )
     parser.add_argument(
         "-c", "--input_currents_directory",
         help="Currents directory",
-        required=False,
         default="./currents/processed",
     )
     parser.add_argument(
         "-b", "--bad_fills_file_name",
         help="Bad fills file",
-        required=False,
         default="fills_info/bad_fills.txt",
     )
     parser.add_argument(
         "-o", "--output_directory",
         help="Output directory name",
-        required=False,
         default="./plots/currents",
     )
     parser.add_argument(
         "-ff", "--first_fill",
         help="First fill number to analyse",
         type=int,
-        required=False,
     )
     parser.add_argument(
         "-lf", "--last_fill",
         help="Last fill number to analyse",
         type=int,
-        required=False,
     )
     parser.add_argument(
         "-era", "--era",
         help="Era to analyse",
-        required=False,
     ),
     parser.add_argument(
         "-s", "--sub_detector",
@@ -95,15 +87,7 @@ class Current:
     pass
 
 
-# *********************************************************************
-# Currents per Layer                                                  
-#
-# Get the sum of the currents/ROC for each layer for each fill number
-#
-# *********************************************************************
-
-
-def __get_currents_per_layer(sub_detector, fills, currents_directory):
+def __get_leakage_currents(sub_detector, fills, currents_directory):
     currents = {}
 
     for fill in fills:
@@ -163,15 +147,6 @@ def __get_currents_per_layer(sub_detector, fills, currents_directory):
 
     return currents
 
-# *********************************************************************
-# Analog and Digital currents per group                                                  
-#
-# Get the sum of the currents/ROC for each layer for each fill number
-#
-# *********************************************************************
-
-
-
 
 def __get_analog_and_digital_currents(sub_detector, fills, curType, currents_directory):
     currents = {}
@@ -183,13 +158,11 @@ def __get_analog_and_digital_currents(sub_detector, fills, curType, currents_dir
         I.Ana_layer3 = 0.
         nLay14=0
         nLay23=0
-        #print "===>We are in fill number: ", str(fill)
         for row in f.readlines():
             if "layer14" in row:
 
                 I.Ana_layer14 += float(row.rsplit('LAY14 ')[1])
                 nLay14+=1
-                #print "Found analog current for layer14: ", I.Ana_layer14
             elif "layer3" in row:
                 I.Ana_layer3 += float(row.rsplit('LAY3 ')[1])
                 nLay23+=1
@@ -197,18 +170,8 @@ def __get_analog_and_digital_currents(sub_detector, fills, curType, currents_dir
         if(nLay14!=0): I.Ana_layer14 /= nLay14
         if(nLay23!=0): I.Ana_layer3 /= nLay23
         currents[str(fill)]= I
-        #print "Current = ", currents[str(fill)]
 
-    #print "===>Checking current values for Iana: ", currents
     return  currents
-
-
-# *********************************************************************
-# Currents vs Phi                                                  
-#
-# Get the sum of the currents/ROC vs Phi for each fill number
-#
-# *********************************************************************
 
 
 def __get_currents_vs_phi(sub_detector, fill, currents_directory, z="m"):
@@ -217,8 +180,6 @@ def __get_currents_vs_phi(sub_detector, fill, currents_directory, z="m"):
     ### Sensor temperature in Kelvin
     T_sensor = T_coolant + T_diff + Kfact
 
-    #print "Fill number: ", fill
-    #print "Sensor Temperature: ", T_sensor
     filename = currents_directory + "/" + str(fill) + "_" + sub_detector + "_HV_ByLayer.txt"
     f = open(filename, 'r+')
     phiMod = {"S1_O": 0., "S2_O": 0., "S3_O": 0., "S4_O": 0., "S5_O": 0., "S6_O": 0., "S7_O": 0., "S8_O": 0., "S1_I": 0., "S2_I": 0., "S3_I": 0., "S4_I": 0., "S5_I": 0., "S6_I": 0., "S7_I": 0., "S8_I": 0.,}
@@ -240,7 +201,6 @@ def __get_currents_vs_phi(sub_detector, fill, currents_directory, z="m"):
         if(len(mapCurr[k])!=0):phiMod[k] = sum(mapCurr[k])/len(mapCurr[k])
         else:phiMod[k]
 
-    #print "PhiMod ====> ",phiMod
     return phiMod
 
 
@@ -258,17 +218,10 @@ def __plot_azimuth(fills, z="m"):
     y_label = "Leakage current I [#mu A / cm^{3}]"
 
     outFill = fills[-1]
-    #print "Last fill: ", outFill
     inFill = fills[0]
-    #print "First fill: ", inFill
     phiDict2 = __get_currents_vs_phi(outFill,z)
-    # print "1st set: ", phiDict2
     phiDict1 = __get_currents_vs_phi(inFill,z)
-    # print "2nd set: ", phiDict1
-    # print "First fill: ", inFill
-    # print "Last fill: ", outFill
     phiMod =  __add_dict(phiDict1, phiDict2)
-    #print "--->Difference: ", phiMod
     phi_ = 22.5
     phi0_ = 11.25
     phi = []
@@ -277,10 +230,7 @@ def __plot_azimuth(fills, z="m"):
     i = 0
     for s in slices:
         phi.append((phi0_ + i*phi_)*ROOT.TMath.DegToRad())
-        #print "phi: ", phi0_ + i*phi_
         I_phi.append(phiMod[s])
-        #print "phiMod: ",phiMod[s]
-        #print 
         i+=1
         
     g1 = gUtl.get_graph(phi, I_phi, x_label, y_label, "Layer 1")
@@ -292,10 +242,6 @@ def __plot_azimuth(fills, z="m"):
     g1.SetMarkerSize(0.8)
     g1.GetXaxis().SetTitle("#Phi")
     g1.GetYaxis().SetTitle("I_{leak} [#mu A / cm^{3}]")
-#    g1.GetYaxis().SetTitle("I_{leak} [#mu A / cm^{3}] (corr. to 0#circC)")
-   # for i in xrange(len(phi)):
-    #    b =  g1.GetXaxis().FindBin(phi[i])
-    #    g1.GetXaxis().SetBinLabel(b, slices[i])
     return g1
 
 
@@ -375,7 +321,7 @@ def __mask_low_currents(currents):
     return mask, currents[mask]
 
 
-def __get_multi_graph(sub_detector, era, fluence, currents, fills, integrated_lumi_per_fill, plotType, Xaxis, min_current=0):
+def __get_multi_graph(sub_detector, era, fluence, currents, fills, integrated_lumi_per_fill, plotType, Xaxis):
 
     x_label = "Fill Number"
     y_label = "Leakage current I [#mu A / cm^{3}]"
@@ -392,8 +338,13 @@ def __get_multi_graph(sub_detector, era, fluence, currents, fills, integrated_lu
         x_L3 = fluence["L3"] * lumi
         x_L4 = lumi
         # x_L4 = fluence["L4"] * lumi  # TODO: why no number for L4?!
+    elif Xaxis=="fill": 
+        x_L1 = np.array(fills)
+        x_L2 = np.array(fills)
+        x_L3 = np.array(fills)
+        x_L4 = np.array(fills)
 
-    if(plotType=="Leakage"):
+    if(plotType=="leakage"):
         y_L1 = np.array([currents[str(f)].i_leak_layer1 for f in fills])
         y_L2 = np.array([currents[str(f)].i_leak_layer2 for f in fills])
         y_L3 = np.array([currents[str(f)].i_leak_layer3 for f in fills])
@@ -413,22 +364,22 @@ def __get_multi_graph(sub_detector, era, fluence, currents, fills, integrated_lu
         y_L2 = np.array([(currents[str(f)].i_roc_layer2 - currents[str(fills[0])].i_roc_layer2) for f in fills])
         y_L3 = np.array([(currents[str(f)].i_roc_layer3 - currents[str(fills[0])].i_roc_layer3) for f in fills])
         y_L4 = np.array([(currents[str(f)].i_roc_layer4 - currents[str(fills[0])].i_roc_layer4) for f in fills])
-    elif(plotType.startswith("Analog") or plotType=="Digital"):
+    elif(plotType.startswith("analog") or plotType=="digital"):
         y_L1 = np.array([currents[str(f)].Ana_layer14  for f in fills])
         y_L2 = np.array([])
         #print "currents: ", y_L1
         y_L3 = np.array([currents[str(f)].Ana_layer3 for f in fills])
         y_L4 = np.array([])
 
-    mask_L1, y_L1 = __mask_low_currents(y_L1)
-    mask_L2, y_L2 = __mask_low_currents(y_L2)
-    mask_L3, y_L3 = __mask_low_currents(y_L3)
-    mask_L4, y_L4 = __mask_low_currents(y_L4)
+    # mask_L1, y_L1 = __mask_low_currents(y_L1)
+    # mask_L2, y_L2 = __mask_low_currents(y_L2)
+    # mask_L3, y_L3 = __mask_low_currents(y_L3)
+    # mask_L4, y_L4 = __mask_low_currents(y_L4)
 
-    x_L1 = x_L1[mask_L1]
-    x_L2 = x_L2[mask_L2]
-    x_L3 = x_L3[mask_L3]
-    x_L4 = x_L4[mask_L4]
+    # x_L1 = x_L1[mask_L1]
+    # x_L2 = x_L2[mask_L2]
+    # x_L3 = x_L3[mask_L3]
+    # x_L4 = x_L4[mask_L4]
 
     i_leak_lumi = ROOT.TMultiGraph("mg", "")
     
@@ -448,7 +399,7 @@ def __get_multi_graph(sub_detector, era, fluence, currents, fills, integrated_lu
     #print "p1: ", FitHisto1.GetParameter(1)
     i_leak_lumi.Add(g1)
     
-    if(not plotType.startswith("Analog") and plotType!="Digital"):
+    if(not plotType.startswith("analog") and plotType!="digital"):
         g2 = gUtl.get_graph(x_L2, y_L2, x_label, y_label, "Layer 2")
         g2.SetLineColor(ROOT.kBlue+2)
         g2.SetMarkerColor(ROOT.kBlue+2)
@@ -462,7 +413,7 @@ def __get_multi_graph(sub_detector, era, fluence, currents, fills, integrated_lu
         i_leak_lumi.Add(g2)
 
     g3 = gUtl.get_graph(x_L3, y_L3, x_label, y_label, "Layer 2 & 3")
-    if(not plotType.startswith("Analog") and plotType!="Digital"): g3.SetName("Layer 3")
+    if(not plotType.startswith("analog") and plotType!="digital"): g3.SetName("Layer 3")
     g3.SetLineColor(ROOT.kRed+1)
     g3.SetMarkerStyle(22)
     g3.SetMarkerColor(ROOT.kRed+1)
@@ -475,7 +426,7 @@ def __get_multi_graph(sub_detector, era, fluence, currents, fills, integrated_lu
     i_leak_lumi.Add(g3)
 
 
-    if(not plotType.startswith("Analog") and plotType!="Digital"):
+    if(not plotType.startswith("analog") and plotType!="digital"):
         if (sub_detector != "Barrel" and era !="2016"): 
             g4 = gUtl.get_graph(x_L4, y_L4, x_label, y_label, "Layer 4")
             g4.SetLineColor(ROOT.kBlack+1)
@@ -483,7 +434,7 @@ def __get_multi_graph(sub_detector, era, fluence, currents, fills, integrated_lu
             g4.SetMarkerColor(ROOT.kBlack+1)
             g4.SetMarkerSize(0.8)
             FitHisto4 = ROOT.TF1("f4", "[0] +[1]*x", 29100, 30000)
-            i_leak_lumi.Add(g4) #sleontsi
+            i_leak_lumi.Add(g4)
 
     return i_leak_lumi
 
@@ -491,7 +442,6 @@ def __get_multi_graph(sub_detector, era, fluence, currents, fills, integrated_lu
 def __plot_currents(output_directory, sub_detector, settings, currents, fluence, 
                     fills, integrated_lumi_per_fill, curTypeObj, Xaxis, era,
                     text):
-    ### curTypeObj is an element of settings, i.e. a tuple
 
     c = ROOT.TCanvas(settings["base_output_file_name"].strip(".pdf"))
     c.cd()
@@ -554,7 +504,6 @@ def __plot_currents(output_directory, sub_detector, settings, currents, fluence,
     latex.SetTextFont(61)
     latex.SetTextAlign(11)
     latex.DrawLatex(0.1, .93, "CMS");
-    #    latex.SetTextFont(52)
     latex.DrawLatex(0.18, .93, "Pixel");
 
     latex2 = ROOT.TLatex()
@@ -581,11 +530,11 @@ def __plot_currents(output_directory, sub_detector, settings, currents, fluence,
           
     figure_name = output_directory + "/" + settings["base_output_file_name"]
     if Xaxis == "lumi":
-        figure_name += "_integrated_lumi"
+        figure_name += "_vs_integrated_lumi"
     elif Xaxis == "fill":
-        figure_name += "_fill"
+        figure_name += "_vs_fill_number"
     elif Xaxis=="fluence":
-        figure_name += "_fluence"
+        figure_name += "_vs_fluence"
 
     extensions = (".pdf", ".png", ".C")
     for extension in extensions:
@@ -622,7 +571,6 @@ def __print_azimuth():
     leg.AddEntry(gr_m, "Layer 1, -z", "P")
     leg.Draw("same")
     
-    ### Latex box
     latex = ROOT.TLatex()
     latex.SetNDC()
     latex.SetTextFont(61)
@@ -638,10 +586,33 @@ def __print_azimuth():
     latex2.SetTextAlign(11)
     latex2.DrawLatex(0.615, 0.93, " 42.45 fb^{-1} at #sqrt{s} =13 TeV");
 
-    #gr_m.Fit("fsin")
-    
     c.Print("i_leak_Azimuth.pdf")
     c.Print("i_leak_Azimuth.png")
+
+
+def __get_y_range(current_name, era, sub_detector):
+    y_range = {
+        "leakage": {
+            "": {
+                "Barrel": (0, 3500),
+                "EndCap": (0, 4000), # ?
+            },
+            "run2": {
+                "Barrel": (0, 7000),
+                "EndCap": (0, 7000), # ?
+            },
+            "run3": {
+                "Barrel": (0, 3500),
+                "EndCap": (0, 4000), # ?
+            }
+        }
+    }
+
+    # A custom default size, e.g. when using -ff and -lf
+    if era not in y_range[current_name].keys():
+        return (0, 3000)
+
+    return y_range[current_name][era][sub_detector]
 
 
 def main(args):
@@ -650,7 +621,7 @@ def main(args):
     Path(args.output_directory).mkdir(parents=True, exist_ok=True)
 
     sub_detector = args.sub_detector
-    era = args.era or ""
+    era = args.era or str(args.first_fill) + "_" + str(args.last_fill)
 
     # TODO: Where is this hard-coded list coming from?
     bad_fills = gUtl.get_bad_fills(args.bad_fills_file_name)
@@ -667,14 +638,16 @@ def main(args):
     fills = gUtl.get_fills(fills_info, bad_fills, args.first_fill, args.last_fill, args.era)
     integrated_lumi_per_fill = gUtl.get_integrated_lumi_per_fill(args.input_lumi_file_name)
 
-    currents = __get_currents_per_layer(sub_detector, fills, args.input_currents_directory)
+    currents = {}
+    currents["leakage"] = __get_leakage_currents(sub_detector, fills, args.input_currents_directory)
 
-    AnaCurrents  = __get_analog_and_digital_currents(sub_detector, fills, "Ana", args.input_currents_directory)
-    AnaPerRocCurrents  = __get_analog_and_digital_currents(sub_detector, fills, "AnaPerRoc", args.input_currents_directory)
-    DigCurrents  = __get_analog_and_digital_currents(sub_detector, fills, "Dig", args.input_currents_directory)
+    currents["analog"] = __get_analog_and_digital_currents(sub_detector, fills, "Ana", args.input_currents_directory)
+    currents["analog_per_roc"]  = __get_analog_and_digital_currents(sub_detector, fills, "AnaPerRoc", args.input_currents_directory)
+    currents["digital"] = __get_analog_and_digital_currents(sub_detector, fills, "Dig", args.input_currents_directory)
 
+    # TODO: Range for FPix is probably different: (0.,30.), "CMS Forward Pixel Detector", "Leakage Current"
     plotting_settings = {
-        "Digital": {
+        "digital": {
             "y_label": "I_{digital} [A]",
             "base_output_file_name": "I_dig_" + era,
             "legend_coordinates": (0.15, 0.7, 0.35, 0.85),
@@ -682,15 +655,7 @@ def main(args):
             "sub_detector_text": "CMS " + args.sub_detector + " Pixel Detector",
             "current_text": "Digital Current",
         },
-        "AnalogPerRoc" : {
-            "y_label": "I_{analog}/ROC [A]",
-            "base_output_file_name": "I_ana_perRoc_" + era,
-            "legend_coordinates": (0.15, 0.7, 0.35, 0.85),
-            "y_range": (0.023, 0.032),
-            "sub_detector_text": "CMS " + args.sub_detector + " Pixel Detector",
-            "current_text": "Analog Current",
-        },
-        "Analog": {
+        "analog": {
             "y_label": "I_{analog} [A]",
             "base_output_file_name": "I_ana_" + era,
             "legend_coordinates": (0.15, 0.7, 0.35, 0.85),
@@ -698,75 +663,42 @@ def main(args):
             "sub_detector_text": "CMS " + args.sub_detector + " Pixel Detector",
             "current_text": "Analog Current",
         },
-        "Leakage": {
+        "analog_per_roc": {
+            "y_label": "I_{analog}/ROC [A]",
+            "base_output_file_name": "I_ana_perRoc_" + era,
+            "legend_coordinates": (0.15, 0.7, 0.35, 0.85),
+            "y_range": (0.023, 0.032),
+            "sub_detector_text": "CMS " + args.sub_detector + " Pixel Detector",
+            "current_text": "Analog Current",
+        },
+        "leakage": {
             "y_label": "I_{leak} [#muA / cm^{3}], (corr.to 0 #circC)",
             "base_output_file_name": "i_leak_" + era,
             "legend_coordinates": (0.15, 0.7, 0.35, 0.85),
-            "y_range": (0., 7000.),
+            "y_range": __get_y_range("leakage", era, args.sub_detector),
             "sub_detector_text": "CMS " + args.sub_detector + " Pixel Detector",
             "current_text": "Leakage Current",
         },
-        # TODO:
-        # "Leakage"      :("I_{leak} [#muA / cm^{3}], (corr.to 0#circC)", "i_leak_lumi_"+era, (0.15, 0.7, 0.35, 0.85), (0.,1400.), "CMS Barrel Pixel Detector",  "Leakage Current")
-        # "Leakage"      :("I_{leak} [#muA / cm^{3}], (corr.to 0#circC)", "i_leak_lumi_"+era, (0.15, 0.7, 0.35, 0.85), (0.,30.), "CMS Forward Pixel Detector", "Leakage Current")
     }
 
-
-
-    # settings = {
-    #     "Digital": (
-    #         "I_{digital} [A]",
-    #         "I_dig_" + era,
-    #         (0.15, 0.7, 0.35, 0.85),
-    #         (2., 5.5),
-    #         "CMS " + args.sub_detector + " Pixel Detector",
-    #         "Digital Current",
-    #     ),
-    #     "AnalogPerRoc" : (
-    #         "I_{analog}/ROC [A]",
-    #         "I_ana_perRoc_" + era,
-    #         (0.15, 0.7, 0.35, 0.85),
-    #         (0.023, 0.032),
-    #         "CMS " + args.sub_detector + " Pixel Detector",
-    #         "Analog Current",
-    #     ),
-    #     "Analog": (
-    #         "I_{analog} [A]",
-    #         "I_ana_" + era,
-    #         (0.15, 0.7, 0.35, 0.85),
-    #         (0., 4.),
-    #         "CMS " + args.sub_detector + " Pixel Detector",
-    #         "Analog Current",
-    #     ),
-    #     "Leakage": (
-    #         "I_{leak} [#muA / cm^{3}], (corr.to 0 #circC)",
-    #         "i_leak_" + era,
-    #         (0.15, 0.7, 0.35, 0.85),
-    #         (0., 4000.),
-    #         "CMS " + args.sub_detector + " Pixel Detector",
-    #         "Leakage Current",
-    #     ),
-    #     # TODO:
-    #     # "Leakage"      :("I_{leak} [#muA / cm^{3}], (corr.to 0#circC)", "i_leak_lumi_"+era, (0.15, 0.7, 0.35, 0.85), (0.,1400.), "CMS Barrel Pixel Detector",  "Leakage Current")
-    #     # "Leakage"      :("I_{leak} [#muA / cm^{3}], (corr.to 0#circC)", "i_leak_lumi_"+era, (0.15, 0.7, 0.35, 0.85), (0.,30.), "CMS Forward Pixel Detector", "Leakage Current")
-    # }
-
-    text = eraUtl.get_date_from_era(era) if era != "" else ""
+    text = eraUtl.get_date_from_era(args.era) if args.era else ""
 
     #__print_azimuth()
-    #__plot_currents(DigCurrents, integrated_lumi_per_fill, "Digital")
-    #__plot_currents(AnaCurrents, integrated_lumi_per_fill, "Analog", "fill")
-    #__plot_currents(AnaPerRocCurrents, integrated_lumi_per_fill, "AnalogPerRoc")
+    #__plot_currents(digital_currents, integrated_lumi_per_fill, "Digital")
+    #__plot_currents(analog_currents, integrated_lumi_per_fill, "Analog", "fill")
+    #__plot_currents(analog_currents_per_roc, integrated_lumi_per_fill, "AnalogPerRoc")
     #__plot_currents(currents, integrated_lumi_per_fill, "Leakage", "fill")
-    variables_to_plot = ("Leakage", )
-    for variable in variables_to_plot:
-        settings = plotting_settings[variable]
-        __plot_currents(args.output_directory, sub_detector, settings, currents,
-                        fluence, fills, integrated_lumi_per_fill, variable,
-                        "lumi", era, text)
-        #__plot_currents(args.output_directory, sub_detector, settings, currents,
-        #                fluence, fills, integrated_lumi_per_fill, variable,
-        #                "fluence", era, text)
+    currents_to_plot = ("leakage", "analog", "analog_per_roc", "digital")
+    x_axes = ("lumi", "fluence", "fill")
+    for current_name in currents_to_plot:
+        for x_axis in x_axes:
+            settings = plotting_settings[current_name]
+            current = currents[current_name]
+            __plot_currents(
+                args.output_directory, sub_detector, settings, current,
+                fluence, fills, integrated_lumi_per_fill, current_name,
+                x_axis, era, text,
+            )
 
 
 if __name__ == "__main__":
