@@ -6,6 +6,8 @@ import cx_Oracle
 import datetime as dt
 
 from utils import generalUtils as gUtl
+from utils import eraUtils as eraUtl
+from utils import pixelDesignUtils as designUtl
 
 
 password = gUtl.get_database_password()
@@ -62,6 +64,7 @@ def main(args):
     cursor = connection.cursor()
     cursor.arraysize=50
 
+
     fills_info = gUtl.get_fill_info(args.input_fills_file_name)
     good_fills = fills_info.fill_number.to_list()
 
@@ -69,15 +72,19 @@ def main(args):
         
         if not fill in good_fills: continue
     
+        phase = eraUtl.get_phase_from_fill(fill)
+        allowed_layers = designUtl.get_layer_names(phase) + designUtl.get_disk_names(phase)
+
         fill_info = fills_info[fills_info.fill_number == fill]
         if len(fill_info) != 1:
             print("Error!")
             exit(0)
 
-        begin_time = fill_info.start_time.to_list()[0]
-        begin_time = dt.datetime.fromisoformat(fill_info.start_time.to_list()[0])
-        # TODO: Why not using the actual end time of the fill but start time + 10 minutes?
-        # end_time = fill_info.end_time.to_list()[0]
+        begin_time = dt.datetime.fromisoformat(fill_info.start_stable_beam.to_list()[0])
+        # The end_time has to be begin_time + 10 minutes (or 20?) because the 
+        # currents that will be read are the last within the begin_time to
+        # end_time time window, such that it is after thermal equilibrium.
+        # The time window has to be large enough to get data
         end_time =  begin_time + dt.timedelta(0, 600)
         begin_time = begin_time.strftime(python_time_mask)
         end_time = end_time.strftime(python_time_mask)
@@ -126,11 +133,16 @@ def main(args):
     
         currents_file_name = args.output_directory + "/" + str(fill) + "_" + args.sub_detector + ".txt"
         output_file = open(currents_file_name, "w+")
-        for i in range(len(output)):
-            if not args.sub_detector in output[i][0]:
+        for row in output:
+            cable, i_mon, v_mon, time  = row
+            layer = designUtl.get_layer_name_from_cable_name(cable)
+            if layer not in allowed_layers:
+                continue
+            if not args.sub_detector in cable:
                 continue
             else:
-                output_file.write(str(output[i][0]) + "   " + str(output[i][1]) + "   " + str(output[i][2]) + "   " + str(output[i][3])+ "\n")
+                line = "%s   %s   %s   %s\n" % (cable, i_mon, v_mon, time)
+                output_file.write(line)
     
         output_file.close()
         print("%s saved." % currents_file_name)

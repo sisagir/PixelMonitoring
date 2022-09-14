@@ -304,3 +304,38 @@ def get_coolant_temperature_for_fill(fill):
         return -20
     else:
         return -22
+
+
+def get_layer_names(phase):
+    if phase == 0:
+        names = ["LAY1", "LAY3"]
+    elif phase == 1:
+        names = ["LAY14", "LAY23"]
+    return names
+
+
+def get_disk_names(phase):
+    if phase == 0:
+        names = []
+    elif phase == 1:
+        names = ["D1", "D2", "D3"]
+    return names
+
+
+def get_channel_names():
+    names = [
+        "channel000",
+        "channel001",
+        "channel002",
+        "channel003",
+    ]
+    return names
+
+
+def get_layer_name_from_cable_name(cable_name):
+    sub_detector = cable_name.split("_")[0]
+    if sub_detector == "PixelBarrel":
+        return cable_name.split("/")[0].split("_")[-1]
+    else:
+        return cable_name.split("/")[0].split("_")[-2]
+
