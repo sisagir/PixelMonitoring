@@ -32,8 +32,8 @@ For all scripts, learn about its usage with `python script.py -h`.
 
 | Script      | Description |
 | :---------- | :---------- |
-| `getFills.py`                 | Reads start and stop timestamps using CMSOMS API for desired fills and writes to an output file (default `fills_info/fills.csv`). |
-| `getIntegratedLuminosity.py`  | Reads instantaneous and integrated lumi using `brilcalc` and writes it to an output file (default `fills_info/integrated_luminosity_per_fill.csv`). |
+| `getFills.py`                 | Reads stable beam start and stop timestamps using CMS OMS API for requested fills, listing only good fills, and writes to an output file (default `fills_info/fills.csv`). |
+| `getIntegratedLuminosity.py`  | Reads instantaneous and integrated lumi from either `brilcalc` or OMS and writes it to an output file (default `fills_info/integrated_luminosity_per_fill.csv`). |
 | `getCurrentsFromDB.py`        | Reads the currents from the `cms_omds_adg` Oracle database and write one file per fill in `currents/from_database/`. |
 | `getCurrents.py`              | Reads currents from database and writes digital, analog, analog per ROC and HV per ROC currents (default in `currents/processed/`). |
 | `getPLCAirTemperatures.py`    | Reads temperatures from the `cms_omds_adg` Oracle database and writes one file per fill (default in `temperatures/air/`). |
