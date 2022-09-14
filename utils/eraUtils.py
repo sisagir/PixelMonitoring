@@ -10,6 +10,7 @@ def get_date_from_era(era):
         "2018": "Apr 2018 - Dec 2018",
         "run1": "Mar 2011 - Feb 2013",
         "run2": "June 2015 - Dec 2018",
+        "run3": "July 2022 - Now",
         "run1_and_run2": "Mar 2011 - Dec 2018",
     }
     return era_to_date[era]
@@ -32,10 +33,13 @@ def get_fills_for_era(era):
     fills_2016 = list(range(4851, 5457))
     fills_2017 = list(range(5698, 6467))
     fills_2018 = list(range(6467, 7495))
+    fills_2022 = list(range(7917, 8152))
     fills_run1 = fills_2012
     # Quick and dirty hack, phase 0 does not work
-    # fills_run2 = fills_2015 + fills_2016 + fills_2017 + fills_2018
-    fills_run2 = fills_2017 + fills_2018
+    # fills_run2 = fills_2017 + fills_2018
+    fills_run2 = fills_2015 + fills_2016 + fills_2017 + fills_2018
+    fills_run3 = fills_2022
     fills_run1_and_run2 = fills_2015 + fills_2016 + fills_2017 + fills_2018
 
     return eval("fills_" + era)
+
