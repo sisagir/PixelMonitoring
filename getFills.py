@@ -11,7 +11,7 @@ def __get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-o", "--output_directory",
-        help="Output directory name",
+        help="Output directory name. Default=%(default)s",
         required=False,
         default="./fills_info/",
     )
@@ -46,7 +46,8 @@ def __get_data(first_fill, last_fill, attributes):
         query.filter("fill_number", fill, "NEQ")
 
     query.filter("stable_beams", "true", "EQ")
-    query.filter("start_time", "null", "NEQ")
+    query.filter("start_stable_beam", "null", "NEQ")
+    query.filter("end_stable_beam", "null", "NEQ")
     query.filter("delivered_lumi", "null", "NEQ")
     query.filter("delivered_lumi", 0, "GT")
     query.filter("injection_scheme", "null", "NEQ")
@@ -78,14 +79,14 @@ def main():
     args = __get_arguments()
     Path(args.output_directory).mkdir(parents=True, exist_ok=True)
 
-    attributes = ["delivered_lumi", "fill_number", "start_time", "end_time"]
+    attributes = ["delivered_lumi", "fill_number", "start_stable_beam", "end_stable_beam"]
     data = __get_data(args.first_fill, args.last_fill, attributes)
-    data = __format_time(data, ("start_time", "end_time"))
+    data = __format_time(data, ("start_stable_beam", "end_stable_beam"))
     data.drop(columns="delivered_lumi", inplace=True)
     
     output_file_name = args.output_directory + "/" + "fills.csv"
-    data.to_csv(output_file_name, index=False, columns=["fill_number", "start_time", "end_time"])
-            
+    data.to_csv(output_file_name, index=False, columns=["fill_number", "start_stable_beam", "end_stable_beam"])
+
 
 if __name__ == "__main__":
    main()

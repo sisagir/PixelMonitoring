@@ -34,11 +34,11 @@ def get_fills(fills_info, bad_fills, first_fill=None, last_fill=None, era=None):
             if fill not in fills_info.fill_number.values or fill in bad_fills:
                 continue
 
-            start_time = fills_info.start_time[fills_info.fill_number == fill].to_list()
-            if len(start_time) > 1:
+            start_stable_beam = fills_info.start_stable_beam[fills_info.fill_number == fill].to_list()
+            if len(start_stable_beam) > 1:
                 print("Error! Fill %d appears twice in input fills file name." % fill)
-            start_time = start_time[0]
-            if "2013" in start_time: continue  # TODO: Why is it like this?
+            start_stable_beam = start_stable_beam[0]
+            if "2013" in start_stable_beam: continue  # TODO: Why is it like this?
 
             fills.append(fill)
 
