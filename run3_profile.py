@@ -1,12 +1,11 @@
-import numpy
 import datetime
-from .modules_geom import Module,ROG
-from .rogring_pc import *
-from .fillIntLumi import *
-from .rogchannel_modules import *
-from .SiPixelDetsUpdatedAfterFlippedChange import *
+from modules_geom import ROG
+from rogring_pc import *
+from fillIntLumi import *
+from rogchannel_modules import *
+from SiPixelDetsUpdatedAfterFlippedChange import *
 import ROOT as rt
-# import prof_datetime
+
 
 datetime_type = "%Y-%m-%d %H:%M:%S"
 

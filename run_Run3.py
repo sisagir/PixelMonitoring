@@ -1,5 +1,7 @@
 import argparse
-from .run3_profile import Run3Sim
+from run3_profile import Run3Sim
+
+
 # def main(args):
     # line_number = args.line_number
     # print_line = args.print_line

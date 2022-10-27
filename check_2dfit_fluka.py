@@ -1,7 +1,6 @@
 import ROOT as rt
 import math
-from .FLUKA.fluka_l1 import *
-from collections import namedtuple
+from FLUKA.fluka_l1 import *
 
 class FlukaField(object):
     

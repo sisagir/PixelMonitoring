@@ -1,8 +1,4 @@
-#!/bin/env python
-import sqlite3 as sql
 import cx_Oracle
-import datetime
-from datetime import date
 from datetime import timedelta
 import dateutil.parser
 

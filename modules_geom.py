@@ -1,7 +1,7 @@
 import ROOT as rt
 import collections
-from . import SiPixelDetsUpdatedAfterFlippedChange as BFPix_pos
-from . import rogchannel_modules as rog_mod
+import SiPixelDetsUpdatedAfterFlippedChange as BFPix_pos
+import rogchannel_modules as rog_mod
 
 ppXS = 79.1
 conversionFactor=ppXS*10e-15/10e-27

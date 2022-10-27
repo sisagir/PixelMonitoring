@@ -1,28 +1,20 @@
 import cx_Oracle
 import datetime
-import matplotlib.pyplot as plt
-import matplotlib.dates as dates
 import os
 import numpy as np
-import math
-###from numberOfROCs import numberOfRocs
 import optparse
-from .numberOfROCs import *
+from numberOfROCs import *
 import collections
 import ROOT as rt
-import sys
 
-from .modules_geom import Module,ROG
-from .rogring_pc import *
-from .fillIntLumi import *
-from .rogchannel_modules import *
-from .SiPixelDetsUpdatedAfterFlippedChange import *
+from modules_geom import ROG
+from rogring_pc import *
+from fillIntLumi import *
+from rogchannel_modules import *
+from SiPixelDetsUpdatedAfterFlippedChange import *
+import show_vmon as ivmon
+import cr_temperatures as crp
 
-sys.path.append('../pixmon/')
-sys.path.append('../pom/cgi-bin/')
-
-from .currents import show_vmon as ivmon
-from probes import get_temperatures_local as crp
 
 usage = "usage: %prog [options]"
 parser = optparse.OptionParser(usage)
