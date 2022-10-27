@@ -1,3 +1,6 @@
+# TODO: (Florian) Is the code in the directory still needed?
+# Some hard-coded path to not public files makes it not executable...
+
 Temperature measured together with the leakage current 
 in this way the leakage current simulation can be scaled
 to the temperature at which measurements were taken
