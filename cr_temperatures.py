@@ -1,11 +1,12 @@
 #!/bin/env python
 
-import query_database
-from dashboard import *
-import numpy
 import cx_Oracle
 import dateutil.parser
+
+from dashboard import *
 from cr_mapping import dpename_dict
+import utils.databaseUtils as dbUtl
+
 
 BPIX_ALIASES = ("Loop", "BPix", "BPI", "BMI", "BPIX", "BOX")
 FPIX_ALIASES = ("BOX", "Box", "FPix", "Disk", "DCDC", "_SF")
@@ -55,8 +56,8 @@ def create_plot(run_numbers, start_stop_time, options = ""):
     new_plot = plot()
     
     if len(run_numbers)>0:
-        start_time = query_database.get_timestamps(run_numbers[0])[0]
-        stop_time = query_database.get_timestamps(run_numbers[-1])[-1]
+        start_time = dbUtl.get_timestamps(run_numbers[0])[0]
+        stop_time = dbUtl.get_timestamps(run_numbers[-1])[-1]
     elif len(start_stop_time)>0:
         start_time = start_stop_time[0]
         stop_time = start_stop_time[-1] 

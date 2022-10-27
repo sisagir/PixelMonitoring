@@ -5,13 +5,6 @@ from array import array as pyArray
 import ROOT
 
 from utils import eraUtils as eraUtl
-from utils.pythonUtils import run_bash_command
-
-
-def get_database_password(file_name="pwd.txt"):
-    directory = run_bash_command("echo $PIXEL_MONITORING_DIR")
-    with open(directory + "/" + file_name) as f:
-        return f.readline().strip()
 
 
 def get_bad_fills(bad_fills_file_name):

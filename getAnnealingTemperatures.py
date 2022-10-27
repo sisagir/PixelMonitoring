@@ -4,19 +4,10 @@ from pathlib import Path
 import argparse
 import time
 
-import cx_Oracle
-import hashlib
 from datetime import datetime, timedelta
 
-from utils import generalUtils as gUtl
 from utils import pythonUtils as pyUtl
-
-
-password = gUtl.get_database_password()
-database_name = "cms_omds_adg"
-user_name = "cms_trk_r"
-
-schema = "cms_lumi_prod"
+from utils import databaseUtils as dbUtl
 
 
 def __get_arguments():
@@ -55,52 +46,6 @@ def __get_arguments():
 
 def __sanity_checks(args):
     assert (args.start_date and args.end_date) or (args.first_fill and args.end_fill)
-
-
-def __fetch(query, caching=False, cache_file_name="queries.cache"):
-
-    query_hashed = hashlib.md5(query.encode('utf-8')).hexdigest()
-    
-    result = ""
-    if caching:
-        with open(cache_file_name, 'a+') as f:
-            save_next_line = False
-            for count, line in enumerate(f, start=1):
-                if (count+1) % 3 == 0:
-                    if query_hashed + "\n" == line:
-                        save_next_line = True
-                        continue
-                if save_next_line:
-                    result = eval(line)
-                    break
-
-    if result == "":
-        connection = cx_Oracle.connect('%s/%s@%s' % (user_name, password, database_name))
-
-        cursor = connection.cursor()
-        cursor.execute(query)
-        result = cursor.fetchall()
-
-        if caching:
-            with open(cache_file_name, 'a+') as f:
-                query = query.replace('\n', ' ')
-                f.write(query + '\n' + query_hashed + '\n' + str(result) + '\n')
-            print("Wrote cache")
-            
-    return result
-
-
-def __get_timestamps(run_number):
-    query = multi_line_str("""
-        SELECT DISTINCT diptime
-        FROM cms_beam_cond.cms_bril_luminosity
-        WHERE run={run_number}
-        ORDER BY diptime""".format(
-            run_number=run_number,
-        )
-    )
-    rows = __fetch(query)
-    return [item[0] for item in rows]
 
 
 def __get_dates_in_file(file_name):
@@ -147,7 +92,7 @@ def get_temperatures(output_directory, start_date, end_date, sensors_list):
             end_time=end_date_str,
         )
     )
-    rows = __fetch(query)
+    rows = dbUtl.fetch(query)
 
     temperatures = {}
 
@@ -278,8 +223,8 @@ def main(args):
     Path(args.output_directory).mkdir(parents=True, exist_ok=True)
 
     if args.first_fill and args.last_fill:
-        start_date_timestamp = __get_timestamps(args.first_fill)[0]
-        end_date_timestamp = __get_timestamps(args.last_fill)[-1]
+        start_date_timestamp = dbUtl.get_timestamps(args.first_fill)[0]
+        end_date_timestamp = dbUtl.get_timestamps(args.last_fill)[-1]
         start_date = datetime.fromtimestamp(start_date_timestamp)
         end_date = datetime.fromtimestamp(end_date_timestamp)
         start_date = start_date.replace(hour=12, minute=0, second=0)

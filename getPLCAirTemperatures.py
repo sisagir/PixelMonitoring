@@ -6,13 +6,10 @@ import cx_Oracle
 import datetime as dt
 
 from utils import generalUtils as gUtl
+from utils import databaseUtils as dbUtl
 
 
-password = gUtl.get_database_password()
-database_name = "cms_omds_adg"
-user_name = "cms_trk_r"
-
-schema = "cms_lumi_prod"
+user_name, password, database_name = dbUtl.get_oms_database_user_password_and_name()
 
 
 def __get_arguments():
@@ -74,8 +71,8 @@ def main(args):
             print("Error!")
             exit(0)
 
-        begin_time = fill_info.start_time.to_list()[0]
-        begin_time = dt.datetime.fromisoformat(fill_info.start_time.to_list()[0])
+        begin_time = fill_info.start_stable_beam.to_list()[0]
+        begin_time = dt.datetime.fromisoformat(fill_info.start_stable_beam.to_list()[0])
         # TODO: Why not using the actual end time of the fill but start time + 10 minutes?
         # end_time = fill_info.end_time.to_list()[0]
         end_time =  begin_time + dt.timedelta(0, 600)

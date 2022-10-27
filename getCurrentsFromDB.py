@@ -6,15 +6,12 @@ import cx_Oracle
 import datetime as dt
 
 from utils import generalUtils as gUtl
+from utils import databaseUtils as dbUtl
 from utils import eraUtils as eraUtl
 from utils import pixelDesignUtils as designUtl
 
 
-password = gUtl.get_database_password()
-database_name = "cms_omds_adg"
-user_name = "cms_trk_r"
-
-schema = "cms_lumi_prod"
+user_name, password, database_name = dbUtl.get_oms_database_user_password_and_name()
 
 
 def __get_arguments():
