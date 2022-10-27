@@ -42,6 +42,7 @@ def __get_data(first_fill, last_fill, attributes):
     query.attrs(attributes)
     query.filter("fill_number", first_fill, "GE")
     query.filter("fill_number", last_fill, "LE")
+    # TODO: Why doing this
     for fill in range(3474, 3564):
         query.filter("fill_number", fill, "NEQ")
 
