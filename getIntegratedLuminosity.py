@@ -85,7 +85,6 @@ def get_lumi_from_oms(first_fill, last_fill):
         "recorded_lumi",
         "delivered_lumi",
         "fill_number",
-        "stable_beams",
         "start_stable_beam",
         "end_stable_beam",
     ]
@@ -93,9 +92,6 @@ def get_lumi_from_oms(first_fill, last_fill):
     query.include("meta")
     query.filter("fill_number", first_fill, "GE")
     query.filter("fill_number", last_fill, "LE")
-    query.filter("stable_beams", "true", "EQ")
-    query.filter("start_stable_beam", "null", "NEQ")
-    query.filter("end_stable_beam", "null", "NEQ")
     query.filter("delivered_lumi", "null", "NEQ")
     query.filter("delivered_lumi", 0, "GT")
 
