@@ -15,7 +15,7 @@ def __get_arguments():
     parser.add_argument(
         "-o", "--output_directory",
         help="Output directory name",
-        default="./temperatures/annealing",
+        default="data/temperatures/annealing",
     )
     parser.add_argument(
         "-s", "--start_date",
@@ -38,7 +38,7 @@ def __get_arguments():
     parser.add_argument(
         "-sfn", "--sensor_names",
         help="File containing temperature sensors names",
-        default="temperature_sensor_names.txt"
+        default="config/temperatures/temperature_sensor_names.txt"
     )
 
     return parser.parse_args()
