@@ -1,8 +1,8 @@
 
-def get_number_of_rocs(phase, sub_detector):
+def get_number_of_rocs(phase, sub_system):
 
     if phase == 0:
-        if sub_detector == "Barrel": 
+        if sub_system == "Barrel": 
             number_of_rocs = {
                 "PixelBarrel_BmI_S1_LAY1": 96,
                 "PixelBarrel_BmI_S1_LAY2": 96,
@@ -102,7 +102,7 @@ def get_number_of_rocs(phase, sub_detector):
                 "PixelBarrel_BpO_S8_LAY3": 160,
             }
 
-        elif sub_detector == "EndCap":
+        elif sub_system == "EndCap":
             number_of_rocs = {
                 "PixelEndCap_BmI_D1_ROG1": 135,
                 "PixelEndCap_BmI_D1_ROG2": 135,
@@ -139,7 +139,7 @@ def get_number_of_rocs(phase, sub_detector):
             }
 
     elif phase == 1:
-        if sub_detector == "Barrel": 
+        if sub_system == "Barrel": 
             number_of_rocs = {
                 "PixelBarrel_BmI_S1_LAY1": 48,
                 "PixelBarrel_BmI_S2_LAY1": 48,
@@ -271,7 +271,7 @@ def get_number_of_rocs(phase, sub_detector):
                 "PixelBarrel_BpO_S8_LAY4": 256,
             }
 
-        elif sub_detector == "EndCap":
+        elif sub_system == "EndCap":
             number_of_rocs = {
                 "PixelEndCap_BpO_D1": 896,
                 "PixelEndCap_BpO_D2": 896,
@@ -333,8 +333,8 @@ def get_channel_names():
 
 
 def get_layer_name_from_cable_name(cable_name):
-    sub_detector = cable_name.split("_")[0]
-    if sub_detector == "PixelBarrel":
+    sub_system = cable_name.split("_")[0]
+    if sub_system == "PixelBarrel":
         return cable_name.split("/")[0].split("_")[-1]
     else:
         return cable_name.split("/")[0].split("_")[-2]

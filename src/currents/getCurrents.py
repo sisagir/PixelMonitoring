@@ -33,7 +33,7 @@ def __get_arguments():
         required=True,
     )
     parser.add_argument(
-        "-s", "--sub_detector",
+        "-s", "--sub_system",
         help="Sub-detector to analyse",
         choices=["Barrel", "EndCap"],
         required=True,
@@ -53,7 +53,7 @@ def main(args):
         phase = eraUtl.get_phase_from_fill(fill)
 
         # Read input file
-        currents_file = args.input_directory_name + "/" + str(fill) + "_" + args.sub_detector + ".txt"
+        currents_file = args.input_directory_name + "/" + str(fill) + "_" + args.sub_system + ".txt"
         if not os.path.exists(currents_file):
             continue
         lines = pyUtl.read_txt_file(currents_file)
@@ -68,11 +68,11 @@ def main(args):
         analog = {}
         digital = {}
 
-        number_of_rocs = designUtl.get_number_of_rocs(phase, args.sub_detector)
+        number_of_rocs = designUtl.get_number_of_rocs(phase, args.sub_system)
         allowed_layers = designUtl.get_layer_names(phase) + designUtl.get_disk_names(phase)
 
         # Open output files
-        prefix = args.output_directory + "/" + str(fill) + "_" + args.sub_detector
+        prefix = args.output_directory + "/" + str(fill) + "_" + args.sub_system
         hv_currents_file_name = prefix + "_HV_ByLayer.txt"
         analog_currents_file_name = prefix + "_Ana.txt"
         analog_currents_per_roc_file_name = prefix + "_AnaPerRoc.txt"

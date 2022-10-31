@@ -68,7 +68,7 @@ def __get_arguments():
         required=False,
     )
     parser.add_argument(
-        "-s", "--sub_detector",
+        "-s", "--sub_system",
         help="Sub-detector to analyse",
         choices=["Barrel", "Endcap", \
                  "Barrel_BmI", "Barrel_BmO", "Barrel_BpI", "Barrel_BpO",
@@ -80,7 +80,7 @@ def __get_arguments():
     return parser.parse_args()
 
 
-def __get_temperatures(input_temperature_directory, temperature_source, sub_detector, fills):
+def __get_temperatures(input_temperature_directory, temperature_source, sub_system, fills):
     temperatures = {}
     for fill in fills:
         filename = input_temperature_directory + "/" + str(fill) + "_" + temperature_source + ".txt"
@@ -88,7 +88,7 @@ def __get_temperatures(input_temperature_directory, temperature_source, sub_dete
             temperature = 0.
             n_measurements = 0
             for row in file.readlines():
-                if sub_detector is not None and sub_detector not in row: continue
+                if sub_system is not None and sub_system not in row: continue
                 temperature += float(row.split()[1])
                 n_measurements += 1
             if n_measurements == 0:
@@ -101,10 +101,10 @@ def __get_temperatures(input_temperature_directory, temperature_source, sub_dete
     return temperatures
 
 
-def make_y_label(sub_detector, temperature_source):
-    if sub_detector is None:
-        sub_detector = "Pixel"
-    y_label = sub_detector.replace("_", " ")\
+def make_y_label(sub_system, temperature_source):
+    if sub_system is None:
+        sub_system = "Pixel"
+    y_label = sub_system.replace("_", " ")\
                           .replace("Endcap", "FPix")\
                           .replace("Barrel", "BPix")\
               + " " + temperature_source \
@@ -172,7 +172,7 @@ def main(args):
     temperatures = __get_temperatures(
         args.input_temperature_directory,
         args.temperature_source,
-        args.sub_detector,
+        args.sub_system,
         fills,
     )
     # fills = list(map(lambda x: int(x), temperatures.keys()))
@@ -184,7 +184,7 @@ def main(args):
         args.x_axis,
         temperatures,
         integrated_lumi_per_fill,
-        make_y_label(args.sub_detector, args.temperature_source)
+        make_y_label(args.sub_system, args.temperature_source)
     )
 
 

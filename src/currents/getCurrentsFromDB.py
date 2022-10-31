@@ -41,7 +41,7 @@ def __get_arguments():
         required=True,
     )
     parser.add_argument(
-        "-s", "--sub_detector",
+        "-s", "--sub_system",
         help="Sub-detector to analyse",
         choices=["Barrel", "EndCap"],
         required=True,
@@ -128,14 +128,14 @@ def main(args):
         cursor.execute(query)
         output = cursor.fetchall()
     
-        currents_file_name = args.output_directory + "/" + str(fill) + "_" + args.sub_detector + ".txt"
+        currents_file_name = args.output_directory + "/" + str(fill) + "_" + args.sub_system + ".txt"
         output_file = open(currents_file_name, "w+")
         for row in output:
             cable, i_mon, v_mon, time  = row
             layer = designUtl.get_layer_name_from_cable_name(cable)
             if layer not in allowed_layers:
                 continue
-            if not args.sub_detector in cable:
+            if not args.sub_system in cable:
                 continue
             else:
                 line = "%s   %s   %s   %s\n" % (cable, i_mon, v_mon, time)
