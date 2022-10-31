@@ -44,6 +44,13 @@ def __get_arguments():
         type=int,
         required=True,
     )
+    parser.add_argument(
+        "-s", "--sub_system",
+        help="Sub-detector to analyse, default is both Barrel and EndCap.",
+        choices=["Barrel", "EndCap", ""],
+        default="",
+        required=False,
+    )
 
     return parser.parse_args()
 
@@ -57,7 +64,7 @@ def main(args):
 
     oracle_time_mask = "DD-Mon-YYYY HH24.MI.SS.FF"
     cursor = connection.cursor()
-    cursor.arraysize=50
+    cursor.arraysize = 50
 
     fills_info = gUtl.get_fill_info(args.input_fills_file_name)
     good_fills = fills_info.fill_number.to_list()
@@ -73,18 +80,18 @@ def main(args):
 
         begin_time = fill_info.start_stable_beam.to_list()[0]
         begin_time = dt.datetime.fromisoformat(fill_info.start_stable_beam.to_list()[0])
-        # TODO: Why not using the actual end time of the fill but start time + 10 minutes?
-        # end_time = fill_info.end_time.to_list()[0]
-        end_time =  begin_time + dt.timedelta(0, 600)
+        # The end_time has to be begin_time + 20 minutes in order to
+        # wait for thermal equilibrium.
+        end_time =  begin_time + dt.timedelta(0, 1200)
         begin_time = begin_time.strftime(python_time_mask)
         end_time = end_time.strftime(python_time_mask)
 
         query = multi_line_str("""
             WITH ids AS (
-                SELECT id, RTRIM(dpe_name, '.') AS dp, SUBSTR(alias, INSTR(alias, '/', -1)+1) AS part
+                SELECT id, SUBSTR(alias, INSTR(alias, '/', -1)+1) AS part, dpname
                 FROM cms_trk_dcs_pvss_cond.aliases, cms_trk_dcs_pvss_cond.dp_name2id
-                WHERE alias LIKE '%Pixel%Air'
-                      AND RTRIM(cms_trk_dcs_pvss_cond.aliases.dpe_name, '.') = cms_trk_dcs_pvss_cond.dp_name2id.dpname
+                WHERE alias LIKE '%Pixel{sub_system}%Air'
+                      AND RTRIM(cms_trk_dcs_pvss_cond.aliases.dpe_name, '.') = dpname
             )
             SELECT part, value_converted, change_date, dpid
             FROM cms_trk_dcs_pvss_cond.tkplcreadsensor, ids
@@ -93,6 +100,7 @@ def main(args):
                                           AND TO_TIMESTAMP('{end_time}', '{oracle_time_mask}')
             ORDER BY part, change_date
             """.format(
+                sub_system=args.sub_system,
                 start_time=begin_time,
                 end_time=end_time,
                 oracle_time_mask=oracle_time_mask,
@@ -102,7 +110,8 @@ def main(args):
         cursor.execute(query)
         output = cursor.fetchall()
 
-        temperature_file_name = args.output_directory + "/" + str(fill) + ".txt"
+        sub_system_string = "_" + args.sub_system if args.sub_system else ""
+        temperature_file_name = args.output_directory + "/" + str(fill) + sub_system_string + ".txt"
         with open(temperature_file_name, "w+") as temperature_file:
             for row in output:
                 temperature_file.write(str(row[0]) + "   " + str(row[1]) + "   " + str(row[2])+ "\n")
