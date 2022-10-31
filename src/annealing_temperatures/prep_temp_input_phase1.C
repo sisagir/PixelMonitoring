@@ -10,9 +10,11 @@
 #include "TSpline.h"
 #include "TNamed.h"
 
+// TODO: Add a flag with a default
+const TString INPUT_DIRECTORY = "../../data/temperatures/annealing/";
 
+// TODO: Can't this be read from somewhere instead of being hard-coded?
 // input: periods
-
 //const Int_t periods = 736; //3500 GeV
 //const Int_t periods = 257; //4000 GeV
 //const Int_t periods = 898; //LS1
@@ -20,11 +22,12 @@
 //const Int_t periods = 238; //~196 value entries; //6500 GeV phase1: May 23 2017 - Jan 16 2018: 238 days
 //const Int_t periods = 385; // 6500 GeV phase1: May 23 2017 - Jun 12 2018:
 //const Int_t periods = 465; // 6500 GeV phase1: May 23 2017 - Aug 31 2018:
-const Int_t periods = 601; // 6500 GeV phase1: May 23 2017 - Jan 15 2019:
+//const Int_t periods = 601; // 6500 GeV phase1: May 23 2017 - Jan 15 2019:
+const Int_t periods = 59; // test
 
-//broken: "PixelBarrel_BmO_6I_L4D3MF.txt", "PixelBarrel_BpI_6I_L4D3PN.txt"
-//outlier: "PixelBarrel_BmO_6M_L4D3MF.txt"
+// TODO: Read list from txt file
 TString sensorfilenames[] = {"PixelBarrel_BmI_1I_L4D2MN.txt", "PixelBarrel_BmI_1M_L4D2MN.txt", "PixelBarrel_BmI_1R_L4D2MN.txt", "PixelBarrel_BmI_2I_L3D1MN.txt", "PixelBarrel_BmI_2R_L3D1MN.txt", "PixelBarrel_BmI_3I_L2D1MN.txt", "PixelBarrel_BmI_3M_L2D1MN.txt", "PixelBarrel_BmI_3R_L2D1MN.txt", "PixelBarrel_BmI_4I_L1D2MN.txt", "PixelBarrel_BmI_4M_L1D2MN.txt", "PixelBarrel_BmI_4R_L1D2MN.txt", "PixelBarrel_BmI_5I_L3D3MN.txt", "PixelBarrel_BmI_5M_L3D3MN.txt", "PixelBarrel_BmI_5R_L3D3MN.txt", "PixelBarrel_BmI_6I_L4D4MN.txt", "PixelBarrel_BmI_6M_L4D4MN.txt", "PixelBarrel_BmI_6R_L4D4MN.txt", "PixelBarrel_BmO_1I_L4D1MF.txt", "PixelBarrel_BmO_1M_L4D1MF.txt", "PixelBarrel_BmO_1R_L4D1MF.txt", "PixelBarrel_BmO_2I_L3D2MF.txt", "PixelBarrel_BmO_2M_L3D2MF.txt", "PixelBarrel_BmO_2R_L3D2MF.txt", "PixelBarrel_BmO_3I_L1D1MF.txt", "PixelBarrel_BmO_3M_L1D1MF.txt", "PixelBarrel_BmO_3R_L1D1MF.txt", "PixelBarrel_BmO_4I_L2D2MF.txt", "PixelBarrel_BmO_4M_L2D2MF.txt", "PixelBarrel_BmO_4R_L2D2MF.txt", "PixelBarrel_BmO_5I_L3D4MF.txt", "PixelBarrel_BmO_5M_L3D4MF.txt", "PixelBarrel_BmO_5R_L3D4MF.txt", "PixelBarrel_BmO_6R_L4D3MF.txt", "PixelBarrel_BpI_1I_L4D1PN.txt", "PixelBarrel_BpI_1M_L4D1PN.txt", "PixelBarrel_BpI_1R_L4D1PN.txt", "PixelBarrel_BpI_2I_L3D2PN.txt", "PixelBarrel_BpI_2M_L3D2PN.txt", "PixelBarrel_BpI_2R_L3D2PN.txt", "PixelBarrel_BpI_3I_L1D1PN.txt", "PixelBarrel_BpI_3R_L1D1PN.txt", "PixelBarrel_BpI_4I_L2D2PN.txt", "PixelBarrel_BpI_4M_L2D2PN.txt", "PixelBarrel_BpI_4R_L2D2PN.txt", "PixelBarrel_BpI_5M_L3D4PN.txt", "PixelBarrel_BpI_5R_L3D4PN.txt", "PixelBarrel_BpI_6M_L4D3PN.txt", "PixelBarrel_BpI_6R_L4D3PN.txt", "PixelBarrel_BpO_1I_L4D2PF.txt","PixelBarrel_BpO_1M_L4D2PF.txt","PixelBarrel_BpO_1R_L4D2PF.txt","PixelBarrel_BpO_2I_L3D1PF.txt","PixelBarrel_BpO_2M_L3D1PF.txt","PixelBarrel_BpO_2R_L3D1PF.txt","PixelBarrel_BpO_3I_L2D1PF.txt","PixelBarrel_BpO_3M_L2D1PF.txt","PixelBarrel_BpO_3R_L2D1PF.txt","PixelBarrel_BpO_4I_L1D2PF.txt","PixelBarrel_BpO_4R_L1D2PF.txt","PixelBarrel_BpO_5I_L3D3PF.txt","PixelBarrel_BpO_5M_L3D3PF.txt","PixelBarrel_BpO_5R_L3D3PF.txt","PixelBarrel_BpO_6I_L4D4PF.txt","PixelBarrel_BpO_6M_L4D4PF.txt","PixelBarrel_BpO_6R_L4D4PF.txt"};
+
 
 const Int_t num_sensors = sizeof(sensorfilenames)/sizeof(sensorfilenames[0]);
 
@@ -84,6 +87,7 @@ Double_t medianvalue( Double_t * x) {
 
 void handle_temperature_input() {
 
+  // TODO: Read output file name from a flag!
   TFile * temperatures_6500_phase1 = new TFile("temperatures_6500Gev_phase1.root", "RECREATE");
 
   gROOT->SetStyle("Plain");
@@ -101,11 +105,12 @@ void handle_temperature_input() {
   for (int i = 0; i < num_sensors; i++) {
     // readfile
     sensorentries[i] = treesensor->GetEntries(); //Entries in treesensor before first falue of sensor i
-    TString inputDir = "";
-    treesensor->ReadFile(inputDir+sensorfilenames[i],"Time/D:Temperature/D",'\t');
+    treesensor->ReadFile(INPUT_DIRECTORY + sensorfilenames[i], "Time/D:Temperature/D", '\t');
     count_validentries[i] = 0; //Initialise
 
-    lasttimestamp_array[i] = 1495533600000; // Adapt - timestamp for first day
+    // TODO: Replace this hard-coded value by reading the vlaue from somewhere!
+    //lasttimestamp_array[i] = 1495533600000; // Adapt - timestamp for first day
+    lasttimestamp_array[i] = 1539684000000; // Adapt - timestamp for first day
   }
   treesensor->SetBranchAddress("Temperature",&temp);
   treesensor->SetBranchAddress("Time",&timestamp);
@@ -116,14 +121,9 @@ void handle_temperature_input() {
     std::cout << "DAY " << day << std::endl;
 
     for (int i = 0; i < num_sensors; i++) {
-      //      std::cout << " sensor nr " << i << " - " ;
-      //      std::cout << "Entry nr " << sensorentries[i] + count_validentries[i];
       treesensor->GetEntry(sensorentries[i]+count_validentries[i]);
-      //      std::cout << "timestamp " << timestamp << " lasttimestamp_array[i] "<< lasttimestamp_array[i] << " 36*60*60*1000 " << 36*60*60*1000 << std::endl;
       if ( timestamp < lasttimestamp_array[i] + 36*60*60*1000 ) {//if the entry is not more than 36 hours later ("next day")
 
-	//	if (temp < 50) {
-	  //  std::cout << "if temp<50 " << std::endl;
 	  lastvalue[i] = temp; //accept new value
 	  lasttimestamp_array[i] = timestamp;
 	  count_validentries[i] += 1;
@@ -145,10 +145,6 @@ void handle_temperature_input() {
   h_T_C_mean->Write();
   h_T_C_median->Write();
 
-  // temperatures_3500->Close();
-  // temperatures_4000->Close();
-  //  temperatures_LS1->Close();
-  // temperatures_6500->Close();
    temperatures_6500_phase1->Close();
 }
 
