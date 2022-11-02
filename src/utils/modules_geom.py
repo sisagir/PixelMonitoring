@@ -1,6 +1,6 @@
 import collections
-import SiPixelDetsUpdatedAfterFlippedChange as BFPix_pos
-import rogchannel_modules as rog_mod
+import utils.SiPixelDetsUpdatedAfterFlippedChange as BFPix_pos
+import utils.rogchannel_modules as rog_mod
 
 
 class Module(object):

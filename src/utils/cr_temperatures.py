@@ -1,8 +1,8 @@
 import cx_Oracle
 import dateutil.parser
 
-from dashboard import *
-from cr_mapping import dpename_dict
+from utils.dashboard import *
+from utils.cr_mapping import dpename_dict
 import utils.databaseUtils as dbUtl
 
 
