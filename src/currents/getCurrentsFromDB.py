@@ -18,15 +18,15 @@ def __get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-i", "--input_fills_file_name",
-        help="Luminosity file",
+        help="Fills file, default=%(default)s",
         required=False,
-        default="fills_info/fills.csv",
+        default="data/fills_info/fills.csv",
     )
     parser.add_argument(
         "-o", "--output_directory",
-        help="Output directory name",
+        help="Output directory name, default=%(default)s",
         required=False,
-        default="./currents/from_database",
+        default="data/currents/from_database",
     )
     parser.add_argument(
         "-ff", "--first_fill",
@@ -46,6 +46,13 @@ def __get_arguments():
         choices=["Barrel", "EndCap"],
         required=True,
     )
+    parser.add_argument(
+        "-t", "--measurement_delay",
+        help="Time in s after which to measure the currents, default=%(default)s s",
+        default=1200,
+        type=int,
+        required=False,
+    )
 
     return parser.parse_args()
 
@@ -59,7 +66,7 @@ def main(args):
     
     connection = cx_Oracle.connect('%s/%s@%s' % (user_name, password, database_name))
     cursor = connection.cursor()
-    cursor.arraysize=50
+    cursor.arraysize = 50
 
 
     fills_info = gUtl.get_fill_info(args.input_fills_file_name)
@@ -78,13 +85,19 @@ def main(args):
             exit(0)
 
         begin_time = dt.datetime.fromisoformat(fill_info.start_stable_beam.to_list()[0])
+        end_time = dt.datetime.fromisoformat(fill_info.end_stable_beam.to_list()[0])
+        delay = dt.timedelta(0, args.measurement_delay)
+        if (end_time - begin_time) < delay:
+            measurement_time = end_time
+        else:
+            measurement_time = begin_time + delay
+        
         # The end_time has to be begin_time + 10 minutes (or 20?) because the 
         # currents that will be read are the last within the begin_time to
         # end_time time window, such that it is after thermal equilibrium.
         # The time window has to be large enough to get data
-        end_time =  begin_time + dt.timedelta(0, 600)
         begin_time = begin_time.strftime(python_time_mask)
-        end_time = end_time.strftime(python_time_mask)
+        measurement_time = measurement_time.strftime(python_time_mask)
 
         query = multi_line_str("""
             WITH cables AS (
@@ -120,7 +133,7 @@ def main(args):
             ORDER BY itime
             """.format(
                 start_time=begin_time,
-                end_time=end_time,
+                end_time=measurement_time,
                 oracle_time_mask=oracle_time_mask,
             )
         )
