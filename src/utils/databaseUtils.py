@@ -1,12 +1,11 @@
+import os
 import hashlib
 import cx_Oracle
 from inspect import cleandoc as multi_line_str
 
-from utils.pythonUtils import run_bash_command
-
 
 def get_oms_database_password(file_name="oms_pwd.txt"):
-    directory = run_bash_command("echo $PIXEL_MONITORING_DIR") + "/credentials"
+    directory = os.environ["PIXEL_MONITORING_DIR"] + "/credentials"
     with open(directory + "/" + file_name) as f:
         return f.readline().strip()
 
