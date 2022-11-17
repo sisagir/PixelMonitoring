@@ -1,3 +1,4 @@
+from pathlib import Path
 import io
 import functools
 import argparse
@@ -15,7 +16,7 @@ def __get_arguments():
         "-o", "--output_directory",
         help="Output directory name. Default=%(default)s",
         required=False,
-        default="data/fills_info/",
+        default="data/luminosity/",
     )
     parser.add_argument(
         "-suffix", "--output_file_name_suffix",
@@ -157,6 +158,7 @@ def add_integrated_lumi(df):
 def main(args):
 
     __run_sanity_checks(args)
+    Path(args.output_directory).mkdir(parents=True, exist_ok=True)
     
     if args.source == "oms":
         df = get_lumi_from_oms(args.first_fill, args.last_fill)
@@ -166,7 +168,8 @@ def main(args):
     df = cast_lumi_to_inverse_fb(df)
     df = add_integrated_lumi(df)
 
-    output_file_name = args.output_directory + "/" + "integrated_luminosity_per_fill" + args.output_file_name_suffix + ".csv"
+    suffix = (len(args.output_file_name_suffix) > 0) * "_" + args.output_file_name_suffix
+    output_file_name = args.output_directory + "/" + "integrated_luminosity_per_fill" + suffix + ".csv"
     columns_to_save = [
         "fill",
         "delivered (/fb)",

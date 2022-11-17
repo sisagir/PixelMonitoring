@@ -13,7 +13,13 @@ def __get_arguments():
         "-o", "--output_directory",
         help="Output directory name. Default=%(default)s",
         required=False,
-        default="./fills_info/",
+        default="data/fills_info/",
+    )
+    parser.add_argument(
+        "-suffix", "--output_file_name_suffix",
+        help="Output file name. Default=\"\"",
+        required=False,
+        default="",
     )
     parser.add_argument(
         "-ff", "--first_fill",
@@ -85,7 +91,8 @@ def main():
     data = __format_time(data, ("start_stable_beam", "end_stable_beam"))
     data.drop(columns="delivered_lumi", inplace=True)
     
-    output_file_name = args.output_directory + "/" + "fills.csv"
+    suffix = (len(args.output_file_name_suffix) > 0) * "_" + args.output_file_name_suffix
+    output_file_name = args.output_directory + "/" + "fills" + suffix  + ".csv"
     data.to_csv(output_file_name, index=False, columns=["fill_number", "start_stable_beam", "end_stable_beam"])
 
 
