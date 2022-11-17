@@ -10,15 +10,15 @@ def __get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-i", "--input_directory_name",
-        help="Input directory containing currents files",
+        help="Input directory containing currents files, default=%(default)s",
         required=False,
-        default="./currents/from_database",
+        default="data/currents/from_database",
     )
     parser.add_argument(
         "-o", "--output_directory",
-        help="Output directory name",
+        help="Output directory name, default=%(default)s",
         required=False,
-        default="./currents/processed",
+        default="data/currents/processed",
     )
     parser.add_argument(
         "-ff", "--first_fill",
@@ -47,10 +47,20 @@ def main(args):
     if not os.path.exists(args.output_directory):
         os.makedirs(args.output_directory)
 
+    number_of_rocs_cache = {}
     for fill in range(args.first_fill, args.last_fill+1):
 
-        print(fill)
         phase = eraUtl.get_phase_from_fill(fill)
+        if phase != 1:
+            raise NotImplementedError
+
+        n_rocs_key = (phase, args.sub_system)
+        if n_rocs_key not in number_of_rocs_cache.keys():
+            number_of_rocs_cache[n_rocs_key] = designUtl.get_number_of_rocs(phase, args.sub_system)
+
+        number_of_rocs = number_of_rocs_cache[n_rocs_key]
+
+        allowed_layers = designUtl.get_layer_names(phase) + designUtl.get_disk_names(phase)
 
         # Read input file
         currents_file = args.input_directory_name + "/" + str(fill) + "_" + args.sub_system + ".txt"
@@ -59,115 +69,71 @@ def main(args):
         lines = pyUtl.read_txt_file(currents_file)
 
         # Book dictionaries to read currents
-        hv_layer1 = {}
-        hv_layer2 = {}
-        hv_layer3_ch1 = {}
-        hv_layer3_ch2 = {}
-        hv_layer3 = {}
-        hv_layer4 = {}
-        analog = {}
-        digital = {}
-
-        number_of_rocs = designUtl.get_number_of_rocs(phase, args.sub_system)
-        allowed_layers = designUtl.get_layer_names(phase) + designUtl.get_disk_names(phase)
+        hv_currents = {}
+        analog_currents = {}
+        digital_currents = {}
 
         # Open output files
         prefix = args.output_directory + "/" + str(fill) + "_" + args.sub_system
         hv_currents_file_name = prefix + "_HV_ByLayer.txt"
         analog_currents_file_name = prefix + "_Ana.txt"
-        analog_currents_per_roc_file_name = prefix + "_AnaPerRoc.txt"
         digital_currents_file_name = prefix + "_Dig.txt"
 
         # Open output files
         hv_currents_file = open(hv_currents_file_name, "w")
         analog_currents_file = open(analog_currents_file_name, "w")
-        analog_currents_per_roc_file = open(analog_currents_per_roc_file_name, "w")
         digital_currents_file = open(digital_currents_file_name, "w")
 
-        # Fill in output file
-        for l in lines:
-            line = l.split()
-            cable_name = line[0]
-            sector = line[0].rsplit('/')[0].strip()
-            layer = designUtl.get_layer_name_from_cable_name(cable_name)
-            current =  line[1]
+        # Fill in output files
+        for line in lines:
+            omds_channel_name, current, _, _, _ = line.split()
+            omds_readout_group_name, channel_name = omds_channel_name.split("/")
+            channel = int(channel_name[-1])
+            current = float(current)
 
             # There are aliases of the sectors names for phase-0 and phase-1
             # which creates problems, get rid of them using allowed_layers.
+            layer = designUtl.get_layer_name_from_cable_name(omds_channel_name)
             if layer not in allowed_layers:
                 continue
 
-            if phase == 0:
-                if "LAY1/channel002" in l:
-                    hv_layer1[sector] = current
-                elif("LAY1/channel003" in l):
-                    hv_layer2[line[0].rsplit('1/')[0].strip()+ "2"] = current
-                elif("LAY3/channel002" in l):
-                    hv_layer3_ch1[sector] = current
-                elif("LAY3/channel003" in l):
-                    hv_layer3_ch2[sector] = current
+            if channel == 0:
+                digital_currents[omds_readout_group_name] = current
+
+            elif channel == 1:
+                analog_currents[omds_readout_group_name] = current
+
+            elif channel in (2, 3):
+                readout_group_name = designUtl.get_readout_group_name_from_omds_channel_name(omds_channel_name, phase=phase)
+                hv_currents[readout_group_name] = current / number_of_rocs[readout_group_name]
+            
+                # TODO: Not sure this code is actually doing what one wants
+                #       It seems the current is per "PixelEndCap_BpI_D1", is this
+                #       a FPix readout group?
+                if("_D1_" in line and ("channel002" in line or "channel003" in line)):
+                    hv_currents[omds_channel_name.rsplit('1_')[0].strip()+ "1"] = current / number_of_rocs[k]
+                elif("_D2_" in line and ("channel002" in line or "channel003" in line)):
+                    hv_currents[omds_channel_name[0].rsplit('2_')[0].strip()+ "2"] = current / number_of_rocs[k]
+                elif("_D3_" in line and ("channel002" in line or "channel003" in line)):
+                    hv_currents[omds_channel_name[0].rsplit('3_')[0].strip()+ "3"] = current / number_of_rocs[k]
 
             else:
-                if "LAY14/channel002" in l:
-                    hv_layer1[line[0].rsplit('14/')[0].strip()+ "1"] = current
-                elif("LAY14/channel003" in l):
-                    hv_layer4[line[0].rsplit('14/')[0].strip()+ "4"] = current
-                elif("LAY23/channel002" in l):
-                    hv_layer2[line[0].rsplit('23/')[0].strip()+ "3"] = current
-                elif("LAY23/channel003" in l):
-                    hv_layer3[line[0].rsplit('23/')[0].strip()+ "2"] = current
-                elif("_D1_" in l and ("channel002" in l or "channel003" in l)):
-                    hv_layer1[line[0].rsplit('1_')[0].strip()+ "1"] = current
-                elif("_D2_" in l and ("channel002" in l or "channel003" in l)):
-                    hv_layer2[line[0].rsplit('2_')[0].strip()+ "2"] = current
-                elif("_D3_" in l and ("channel002" in l or "channel003" in l)):
-                    hv_layer3[line[0].rsplit('3_')[0].strip()+ "3"] = current
+                raise ValueError(f"Invalid channel {channel} in OMDS channel name {omds_channel_name}")
 
-            if "channel000" in l:
-                digital[sector] = current
-            elif "channel001" in l:
-                analog[sector] = current
-
-
-        if phase == 0:
-            [hv_currents_file.write(k + " " + str.format("{0:.4f}", float(hv_layer1[k])/float(number_of_rocs[k]) ) + "\n") for k in hv_layer1.keys() ]
-            [hv_currents_file.write(k + " " + str.format("{0:.4f}", float(hv_layer2[k])/float(number_of_rocs[k]) ) + "\n") for k in hv_layer2.keys() ]
-            [hv_currents_file.write(k + " " + str.format("{0:.4f}", (float(hv_layer3_ch1[k]) + float(hv_layer3_ch2[k]) )/float(number_of_rocs[k]) ) + "\n") for k in hv_layer3_ch1.keys() ]
-            [digital_currents_file.write(k + " " + str.format("{0:.4f}", float(digital[k])) + "\n") for k in digital.keys() ]
-            [analog_currents_file.write(k + " " + str.format("{0:.4f}", float(analog[k]) ) + "\n") for k in analog.keys() ]
-            [analog_currents_per_roc_file.write(k + " " + str.format("{0:.4f}", float(analog[k])/float(number_of_rocs[k]))  + "\n")
-             if k.endswith("3")
-             else analog_currents_per_roc_file.write(k + " " + str.format("{0:.4f}", float(analog[k])/(float(number_of_rocs[k]) + float(number_of_rocs[k[:-1] + "2"])))  + "\n")
-             for k in analog.keys()
-            ]
-
-        else:
-            [hv_currents_file.write(k + " " + str.format("{0:.4f}", float(hv_layer1[k])/float(number_of_rocs[k]) ) + "\n") for k in hv_layer1.keys() ]
-            [hv_currents_file.write(k + " " + str.format("{0:.4f}", float(hv_layer2[k])/float(number_of_rocs[k]) ) + "\n") for k in hv_layer2.keys() ]
-            for k in hv_layer3.keys():
-                if(fill-1==5730):
-                    current = float(hv_layer3[k])/float(number_of_rocs[k])
-                hv_currents_file.write(k + " " + str.format("{0:.4f}", float(hv_layer3[k])/float(number_of_rocs[k]) ) + "\n")
-            [hv_currents_file.write(k + " " + str.format("{0:.4f}", float(hv_layer4[k])/float(number_of_rocs[k]) ) + "\n") for k in hv_layer4.keys() ]
-            [analog_currents_file.write(k + " " + str.format("{0:.4f}", float(analog[k]) ) + "\n") for k in analog.keys() ]
-
-
-            for k in analog.keys():
-                if k.endswith("LAY3"):
-                    analog_currents_per_roc_file.write(k + " " + str.format("{0:.4f}", float(analog[k])/(float(number_of_rocs[k[:-1] + "2"]) + float(number_of_rocs[k[:-1] + "3"])))  + "\n")
-                elif(k.endswith("LAY14")):
-                    analog_currents_per_roc_file.write(k + " " + str.format("{0:.4f}", float(analog[k])/(float(number_of_rocs[k[:-2] + "1"]) + float(number_of_rocs[k[:-2] + "4"])))  + "\n")
-
-            [digital_currents_file.write(k + " " + str.format("{0:.4f}", float(digital[k])) + "\n") for k in digital.keys() ]
+        currents_types = (hv_currents, analog_currents, digital_currents)
+        files = (hv_currents_file, analog_currents_file, digital_currents_file)
+        sorting_function = lambda item: item[0][-1] + item[0]
+        for currents, file in zip(currents_types, files):
+            for key, current in sorted(currents.items(), key=sorting_function):
+                file.write("%s %.4f\n" % (key, current))
 
         hv_currents_file.close()
         digital_currents_file.close()
         analog_currents_file.close()
-        analog_currents_per_roc_file.close()
 
-        for file_name in (hv_currents_file_name, analog_currents_file_name,
-                          analog_currents_per_roc_file_name, digital_currents_file_name):
-            print("%s has been saved." % file_name)
+        file_names = (hv_currents_file_name, analog_currents_file_name, digital_currents_file_name)
+        for file_name in file_names:
+            print(f"{file_name} has been saved.")
         print("")
 
 
