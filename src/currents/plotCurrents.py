@@ -5,10 +5,10 @@ import argparse
 import numpy as np
 import ROOT
 
+from utils import generalUtils as gUtl
 from utils import eraUtils as eraUtl
 from utils import pixelDesignUtils as designUtl
-from utils import generalUtils as gUtl
-from constants import *
+from utils.constants import *
 
 
 ROOT.gROOT.SetBatch(ROOT.kTRUE)
@@ -20,27 +20,27 @@ def __get_arguments():
     parser.add_argument(
         "-i", "--input_fills_file_name",
         help="Fills file",
-        default="fills_info/fills.csv",
-    )
-    parser.add_argument(
-        "-l", "--input_lumi_file_name",
-        help="Luminosity file",
-        default="fills_info/integrated_luminosity_per_fill.csv",
-    )
-    parser.add_argument(
-        "-c", "--input_currents_directory",
-        help="Currents directory",
-        default="./currents/processed",
+        default="data/fills_info/fills.csv",
     )
     parser.add_argument(
         "-b", "--bad_fills_file_name",
         help="Bad fills file",
-        default="fills_info/bad_fills.txt",
+        default="data/fills_info/bad_fills.txt",
+    )
+    parser.add_argument(
+        "-l", "--input_lumi_file_name",
+        help="Luminosity file",
+        default="data/luminosity/integrated_luminosity_per_fill.csv",
+    )
+    parser.add_argument(
+        "-c", "--input_currents_directory",
+        help="Currents directory",
+        default="data/currents/processed",
     )
     parser.add_argument(
         "-o", "--output_directory",
         help="Output directory name",
-        default="./plots/currents",
+        default="plots/currents",
     )
     parser.add_argument(
         "-ff", "--first_fill",
@@ -108,26 +108,26 @@ def __get_leakage_currents(sub_system, fills, currents_directory):
         I.nLay3 = 0
         I.nLay4 = 0
         for row in f.readlines():
-            if "LAY1" in row :
-                I.i_roc_layer1 += float(row.rsplit('LAY1 ')[1])
+            if "LYR1" in row :
+                I.i_roc_layer1 += float(row.split()[1])
                 I.nLay1+=1
-            elif "LAY2" in row :
-                I.i_roc_layer2 += float(row.rsplit('LAY2 ')[1])
+            elif "LYR2" in row :
+                I.i_roc_layer2 += float(row.split()[1])
                 I.nLay2+=1
-            elif "LAY3" in row :
-                I.i_roc_layer3 += float(row.rsplit('LAY3 ')[1])
+            elif "LYR3" in row :
+                I.i_roc_layer3 += float(row.split()[1])
                 I.nLay3+=1
-            elif "LAY4" in row :
-                I.i_roc_layer4 += float(row.rsplit('LAY4 ')[1])
+            elif "LYR4" in row :
+                I.i_roc_layer4 += float(row.split()[1])
                 I.nLay4+=1
             elif "D1" in row :
-                I.i_roc_layer1 += float(row.rsplit('D1 ')[1])
+                I.i_roc_layer1 += float(row.split()[1])
                 I.nLay1+=1
             elif "D2" in row :
-                I.i_roc_layer2 += float(row.rsplit('D2 ')[1])
+                I.i_roc_layer2 += float(row.split()[1])
                 I.nLay2+=1
             elif "D3" in row :
-                I.i_roc_layer3 += float(row.rsplit('D3 ')[1])
+                I.i_roc_layer3 += float(row.split()[1])
                 I.nLay3+=1
 
         I.i_leak_layer1 = __get_leakage_current(I.i_roc_layer1, T_sensor)
@@ -135,10 +135,10 @@ def __get_leakage_currents(sub_system, fills, currents_directory):
         I.i_leak_layer3 = __get_leakage_current(I.i_roc_layer3, T_sensor)
         I.i_leak_layer4 = __get_leakage_current(I.i_roc_layer4, T_sensor)
 
-        if(I.nLay1!=0):I.i_leak_layer1 /= I.nLay1
-        if(I.nLay2!=0):I.i_leak_layer2 /= I.nLay2
-        if(I.nLay3!=0):I.i_leak_layer3 /= I.nLay3
-        if(I.nLay4!=0):I.i_leak_layer4 /= I.nLay4
+        if I.nLay1!=0:I.i_leak_layer1 /= I.nLay1
+        if I.nLay2!=0:I.i_leak_layer2 /= I.nLay2
+        if I.nLay3!=0:I.i_leak_layer3 /= I.nLay3
+        if I.nLay4!=0:I.i_leak_layer4 /= I.nLay4
 
         currents[str(fill)]= I
 
@@ -148,6 +148,7 @@ def __get_leakage_currents(sub_system, fills, currents_directory):
     return currents
 
 
+# TODO: Not sure if this function still works for phase 1...
 def __get_analog_and_digital_currents(sub_system, fills, curType, currents_directory):
     currents = {}
     for fill in fills:
@@ -159,90 +160,18 @@ def __get_analog_and_digital_currents(sub_system, fills, curType, currents_direc
         nLay14=0
         nLay23=0
         for row in f.readlines():
-            if "layer14" in row:
-
+            if "LAY14" in row:
                 I.Ana_layer14 += float(row.rsplit('LAY14 ')[1])
                 nLay14+=1
-            elif "layer3" in row:
+            elif "LAY3" in row:
                 I.Ana_layer3 += float(row.rsplit('LAY3 ')[1])
                 nLay23+=1
 
-        if(nLay14!=0): I.Ana_layer14 /= nLay14
-        if(nLay23!=0): I.Ana_layer3 /= nLay23
+        if nLay14!=0: I.Ana_layer14 /= nLay14
+        if nLay23!=0: I.Ana_layer3 /= nLay23
         currents[str(fill)]= I
 
     return  currents
-
-
-def __get_currents_vs_phi(sub_system, fill, currents_directory, z="m"):
-
-    T_coolant = designUtl.get_coolant_temperature_for_fill(fill)
-    ### Sensor temperature in Kelvin
-    T_sensor = T_coolant + T_diff + Kfact
-
-    filename = currents_directory + "/" + str(fill) + "_" + sub_system + "_HV_ByLayer.txt"
-    f = open(filename, 'r+')
-    phiMod = {"S1_O": 0., "S2_O": 0., "S3_O": 0., "S4_O": 0., "S5_O": 0., "S6_O": 0., "S7_O": 0., "S8_O": 0., "S1_I": 0., "S2_I": 0., "S3_I": 0., "S4_I": 0., "S5_I": 0., "S6_I": 0., "S7_I": 0., "S8_I": 0.,}
-
-    nLay1 = 0
-    mapCurr = {}
-    for k in list(phiMod.keys()):
-        mapCurr[k] = []
-
-    for row in f.readlines():
-        if ("layer1" in row ):
-            if("BpI" not in row):
-                r = row.split('_')
-                key = r[2] + "_" + r[1][2]
-                zSide =  r[1][1]
-                if(zSide == z):mapCurr[key].append(__get_leakage_current(float(row.rsplit('LAY1 ')[1]), T_sensor))
-
-    for k in  list(mapCurr.keys()):
-        if(len(mapCurr[k])!=0):phiMod[k] = sum(mapCurr[k])/len(mapCurr[k])
-        else:phiMod[k]
-
-    return phiMod
-
-
-def __add_dict(dict1, dict2):
-    phiMod = {}
-    for k in list(dict1.keys()):
-        phiMod[k] = dict2[k] - dict1[k]
-            
-    return phiMod
-
-        
-def __plot_azimuth(fills, z="m"):
-
-    x_label = "Fill Number"
-    y_label = "Leakage current I [#mu A / cm^{3}]"
-
-    outFill = fills[-1]
-    inFill = fills[0]
-    phiDict2 = __get_currents_vs_phi(outFill,z)
-    phiDict1 = __get_currents_vs_phi(inFill,z)
-    phiMod =  __add_dict(phiDict1, phiDict2)
-    phi_ = 22.5
-    phi0_ = 11.25
-    phi = []
-    I_phi = []
-    slices = ["S4_I", "S3_I", "S2_I", "S1_I", "S1_O", "S2_O", "S3_O", "S4_O", "S5_O", "S6_O", "S7_O", "S8_O", "S8_I", "S7_I", "S6_I", "S5_I"]
-    i = 0
-    for s in slices:
-        phi.append((phi0_ + i*phi_)*ROOT.TMath.DegToRad())
-        I_phi.append(phiMod[s])
-        i+=1
-        
-    g1 = gUtl.get_graph(phi, I_phi, x_label, y_label, "Layer 1")
-    colour = ROOT.kRed+1
-    if(z =="m"): colour = ROOT.kBlack
-    g1.SetLineColor(colour)
-    g1.SetMarkerColor(colour)
-    g1.SetMarkerStyle(22)
-    g1.SetMarkerSize(0.8)
-    g1.GetXaxis().SetTitle("#Phi")
-    g1.GetYaxis().SetTitle("I_{leak} [#mu A / cm^{3}]")
-    return g1
 
 
 # TODO: Check if this old function is really obsolete or not
@@ -250,22 +179,22 @@ def __plot_azimuth(fills, z="m"):
 # def __plot_currents(currents, fills, plotType="Leakage"):
 
 #     fill_array = array('f', fills)
-#     if(plotType=="Leakage"):
+#     if plotType=="Leakage":
 #         i_leak_L1_array = array('f',  [currents[str(f)].i_leak_layer1 for f in fills])
 #         i_leak_L2_array = array('f',  [currents[str(f)].i_leak_layer2 for f in fills])
 #         i_leak_L3_array = array('f',  [currents[str(f)].i_leak_layer3 for f in fills])
 #         i_leak_L4_array = array('f',  [currents[str(f)].i_leak_layer4 for f in fills])
-#     elif(plotType=="ROC"):
+#     elif plotType=="ROC":
 #         i_leak_L1_array = array('f',  [currents[str(f)].i_roc_layer1 for f in fills])
 #         i_leak_L2_array = array('f',  [currents[str(f)].i_roc_layer2 for f in fills])
 #         i_leak_L3_array = array('f',  [currents[str(f)].i_roc_layer3 for f in fills])
 #         i_leak_L4_array = array('f',  [currents[str(f)].i_roc_layer4 for f in fills])
-#     elif(plotType=="DI"):
+#     elif plotType=="DI":
 #         i_leak_L1_array = array('f',  [(currents[str(f)].i_leak_layer1 - currents[str(fills[0])].i_leak_layer1) for f in fills])
 #         i_leak_L2_array = array('f',  [(currents[str(f)].i_leak_layer2 - currents[str(fills[0])].i_leak_layer2) for f in fills])
 #         i_leak_L3_array = array('f',  [(currents[str(f)].i_leak_layer3 - currents[str(fills[0])].i_leak_layer3) for f in fills])
 #         i_leak_L4_array = array('f',  [(currents[str(f)].i_leak_layer4 - currents[str(fills[0])].i_leak_layer4) for f in fills])
-#     elif(plotType=="DeltaROC"):
+#     elif plotType=="DeltaROC":
 #         print("DIROC")
 #         i_leak_L1_array = array('f',  [(currents[str(f)].i_roc_layer1 - currents[str(fills[0])].i_roc_layer1) for f in fills])
 #         i_leak_L2_array = array('f',  [(currents[str(f)].i_roc_layer2 - currents[str(fills[0])].i_roc_layer2) for f in fills])
@@ -309,77 +238,61 @@ def __plot_azimuth(fills, z="m"):
 #     return i_leak
 
 
-def __mask_low_currents(currents):
-    n = len(currents)
-    n_ranges = n // 20
-    ranges = np.linspace(0, n, n_ranges)
-    mask = np.array([], dtype=bool)
-    for r in zip(ranges[:-1], ranges[1:]):
-        currents_this_range = currents[math.ceil(r[0]):math.ceil(r[1])]
-        mask_this_range = currents_this_range > 0.1 * currents_this_range[currents_this_range > 0].mean()
-        mask = np.concatenate((mask, mask_this_range), axis=0)
-    return mask, currents[mask]
-
-
 def __get_multi_graph(sub_system, era, fluence, currents, fills, integrated_lumi_per_fill, plotType, Xaxis):
 
     x_label = "Fill Number"
     y_label = "Leakage current I [#mu A / cm^{3}]"
 
     lumi = np.array([integrated_lumi_per_fill[fill] for fill in fills])
+
     if Xaxis == "lumi":
         x_L1 = lumi
         x_L2 = lumi
         x_L3 = lumi
         x_L4 = lumi
+
     elif Xaxis=="fluence": 
         x_L1 = fluence["L1"] * lumi
         x_L2 = fluence["L2"] * lumi
         x_L3 = fluence["L3"] * lumi
         x_L4 = lumi
         # x_L4 = fluence["L4"] * lumi  # TODO: why no number for L4?!
+
     elif Xaxis=="fill": 
         x_L1 = np.array(fills)
         x_L2 = np.array(fills)
         x_L3 = np.array(fills)
         x_L4 = np.array(fills)
 
-    if(plotType=="leakage"):
+    if plotType=="leakage":
         y_L1 = np.array([currents[str(f)].i_leak_layer1 for f in fills])
         y_L2 = np.array([currents[str(f)].i_leak_layer2 for f in fills])
         y_L3 = np.array([currents[str(f)].i_leak_layer3 for f in fills])
         y_L4 = np.array([currents[str(f)].i_leak_layer4 for f in fills])
-    elif(plotType=="ROC"):
+
+    elif plotType=="ROC":
         y_L1 = np.array([currents[str(f)].i_roc_layer1 for f in fills])
         y_L2 = np.array([currents[str(f)].i_roc_layer2 for f in fills])
         y_L3 = np.array([currents[str(f)].i_roc_layer3 for f in fills])
         y_L4 = np.array([currents[str(f)].i_roc_layer4 for f in fills])
-    elif(plotType=="DI"):
+
+    elif plotType=="DI":
         y_L1 = np.array([(currents[str(f)].i_leak_layer1 - currents[str(fills[0])].i_leak_layer1) for f in fills])
         y_L2 = np.array([(currents[str(f)].i_leak_layer2 - currents[str(fills[0])].i_leak_layer2) for f in fills])
         y_L3 = np.array([(currents[str(f)].i_leak_layer3 - currents[str(fills[0])].i_leak_layer3) for f in fills])
         y_L4 = np.array([(currents[str(f)].i_leak_layer4 - currents[str(fills[0])].i_leak_layer4) for f in fills])
-    elif(plotType=="DeltaROC"):
+
+    elif plotType=="DeltaROC":
         y_L1 = np.array([(currents[str(f)].i_roc_layer1 - currents[str(fills[0])].i_roc_layer1) for f in fills])
         y_L2 = np.array([(currents[str(f)].i_roc_layer2 - currents[str(fills[0])].i_roc_layer2) for f in fills])
         y_L3 = np.array([(currents[str(f)].i_roc_layer3 - currents[str(fills[0])].i_roc_layer3) for f in fills])
         y_L4 = np.array([(currents[str(f)].i_roc_layer4 - currents[str(fills[0])].i_roc_layer4) for f in fills])
-    elif(plotType.startswith("analog") or plotType=="digital"):
+
+    elif plotType.startswith("analog") or plotType=="digital":
         y_L1 = np.array([currents[str(f)].Ana_layer14  for f in fills])
         y_L2 = np.array([])
-        #print "currents: ", y_L1
         y_L3 = np.array([currents[str(f)].Ana_layer3 for f in fills])
         y_L4 = np.array([])
-
-    # mask_L1, y_L1 = __mask_low_currents(y_L1)
-    # mask_L2, y_L2 = __mask_low_currents(y_L2)
-    # mask_L3, y_L3 = __mask_low_currents(y_L3)
-    # mask_L4, y_L4 = __mask_low_currents(y_L4)
-
-    # x_L1 = x_L1[mask_L1]
-    # x_L2 = x_L2[mask_L2]
-    # x_L3 = x_L3[mask_L3]
-    # x_L4 = x_L4[mask_L4]
 
     i_leak_lumi = ROOT.TMultiGraph("mg", "")
     
@@ -388,52 +301,32 @@ def __get_multi_graph(sub_system, era, fluence, currents, fills, integrated_lumi
     g1.SetMarkerColor(ROOT.kTeal+4)
     g1.SetMarkerStyle(22)
     g1.SetMarkerSize(0.8)
-
-    FitHisto1 = ROOT.TF1("f1", "[0] +[1]*x", 29100, 30000)
-    # FitHisto.SetParLimits(0, 400, 600)
-    # FitHisto.SetParLimits(1, 0.09, 0.1)
-    #g1.Fit("f1");
-    #g1.Fit("pol1", "F");
-    # print "Layer1: "
-    #print "p0: ", FitHisto1.GetParameter(0)
-    #print "p1: ", FitHisto1.GetParameter(1)
     i_leak_lumi.Add(g1)
     
-    if(not plotType.startswith("analog") and plotType!="digital"):
+    if not plotType.startswith("analog") and plotType!="digital":
         g2 = gUtl.get_graph(x_L2, y_L2, x_label, y_label, "Layer 2")
         g2.SetLineColor(ROOT.kBlue+2)
         g2.SetMarkerColor(ROOT.kBlue+2)
         g2.SetMarkerStyle(22)
         g2.SetMarkerSize(0.8)
-        FitHisto2 = ROOT.TF1("f2", "[0] +[1]*x", 29100, 30000)
-        #g2.Fit("f2");
-        #print "Layer2: "
-        #print "p0: ", FitHisto2.GetParameter(0)
-        #print "p1: ", FitHisto2.GetParameter(1)
         i_leak_lumi.Add(g2)
 
     g3 = gUtl.get_graph(x_L3, y_L3, x_label, y_label, "Layer 2 & 3")
-    if(not plotType.startswith("analog") and plotType!="digital"): g3.SetName("Layer 3")
+    if not plotType.startswith("analog") and plotType!="digital": g3.SetName("Layer 3")
     g3.SetLineColor(ROOT.kRed+1)
     g3.SetMarkerStyle(22)
     g3.SetMarkerColor(ROOT.kRed+1)
     g3.SetMarkerSize(0.8)
-    FitHisto3 = ROOT.TF1("f3", "[0] +[1]*x", 29100, 30000)
-    #g3.Fit("f3");
-    #print "Layer3: "
-    #print "p0: ", FitHisto3.GetParameter(0)
-    #print "p1: ", FitHisto3.GetParameter(1)
     i_leak_lumi.Add(g3)
 
 
-    if(not plotType.startswith("analog") and plotType!="digital"):
-        if (sub_system != "Barrel" and era !="2016"): 
+    if not plotType.startswith("analog") and plotType!="digital":
+        if sub_system != "Barrel" and era !="2016": 
             g4 = gUtl.get_graph(x_L4, y_L4, x_label, y_label, "Layer 4")
             g4.SetLineColor(ROOT.kBlack+1)
             g4.SetMarkerStyle(22)
             g4.SetMarkerColor(ROOT.kBlack+1)
             g4.SetMarkerSize(0.8)
-            FitHisto4 = ROOT.TF1("f4", "[0] +[1]*x", 29100, 30000)
             i_leak_lumi.Add(g4)
 
     return i_leak_lumi
@@ -454,11 +347,11 @@ def __plot_currents(output_directory, sub_system, settings, currents, fluence,
                           integrated_lumi_per_fill, curTypeObj, Xaxis)
     ROOT.SetOwnership(I,0)
     I.Draw("AP")
-    if (Xaxis=="lumi"):
+    if Xaxis=="lumi":
         I.GetXaxis().SetTitle("Integrated Luminosity [fb^{-1}]")
-    elif (Xaxis=="fill"):
+    elif Xaxis=="fill":
         I.GetXaxis().SetTitle("Fill number")
-    elif (Xaxis=="fluence"):
+    elif Xaxis=="fluence":
         I.GetXaxis().SetTitle("Total fluence #Phi [1 MeV Neu Eq.]")
     I.GetYaxis().SetTitle(settings["y_label"])
     I.GetYaxis().SetTitleOffset(1.3)
@@ -473,15 +366,15 @@ def __plot_currents(output_directory, sub_system, settings, currents, fluence,
     nLayers = I.GetListOfGraphs().GetSize()
     print("How many layers? ", nLayers)
 
-    if(nLayers==2):
-        if(sub_system == "EndCap"):
+    if nLayers==2:
+        if sub_system == "EndCap":
             leg.AddEntry(I.GetListOfGraphs()[0], "Disk 1","P")
             leg.AddEntry(I.GetListOfGraphs()[1], "Disk 2","P")
         else:
             leg.AddEntry(I.GetListOfGraphs()[0], "Layers 1 & 4","P")
             leg.AddEntry(I.GetListOfGraphs()[1], "Layers 2 & 3","P")
-    if(nLayers==3):
-        if(sub_system == "EndCap"):
+    if nLayers==3:
+        if sub_system == "EndCap":
             leg.AddEntry(I.GetListOfGraphs()[0], "Disk 1","P")
             leg.AddEntry(I.GetListOfGraphs()[1], "Disk 2","P")
             leg.AddEntry(I.GetListOfGraphs()[2], "Disk 3","P")
@@ -489,7 +382,7 @@ def __plot_currents(output_directory, sub_system, settings, currents, fluence,
             leg.AddEntry(I.GetListOfGraphs()[0], "Layer 1","P")
             leg.AddEntry(I.GetListOfGraphs()[1], "Layer 2","P")
             leg.AddEntry(I.GetListOfGraphs()[2], "Layer 3","P")
-    if(nLayers==4 and sub_system == "Barrel" and era!="2016"):
+    if nLayers==4 and sub_system == "Barrel" and era!="2016":
         leg.AddEntry(I.GetListOfGraphs()[0], "Layer 1","P")
         leg.AddEntry(I.GetListOfGraphs()[1], "Layer 2","P")
         leg.AddEntry(I.GetListOfGraphs()[2], "Layer 3","P")
@@ -541,55 +434,6 @@ def __plot_currents(output_directory, sub_system, settings, currents, fluence,
         c.Print(figure_name + extension)
 
 
-def __print_azimuth():
-    gr_m = __plot_azimuth("m")
-    gr_p = __plot_azimuth("p")
-
-    leg = ROOT.TLegend(0.7, 0.7, 0.85, 0.85)
-    ROOT.SetOwnership(leg,0)
-
-    leg.SetNColumns(1)
-    leg.SetFillColor(0)
-    leg.SetFillStyle(0)
-    leg.SetTextFont(42)
-    leg.SetBorderSize(0)
-
-    c = ROOT.TCanvas()
-    c.cd()
-    gr_p.GetYaxis().SetRangeUser(1000., 2100.)
-    gr_m.GetYaxis().SetRangeUser(1000., 2100.)
-    gr_p.GetYaxis().SetTitleOffset(1.2)
-
-    fsin = ROOT.TF1("fsin", "[0]*sin([1]*x)", 0., 6.3)
-    fsin.SetLineColor(ROOT.kRed)
-
-    gr_p.SetTitle("")
-    gr_p.Draw("AP")
-    gr_m.Draw("Psame")
-  
-    leg.AddEntry(gr_p, "Layer 1, +z", "P")
-    leg.AddEntry(gr_m, "Layer 1, -z", "P")
-    leg.Draw("same")
-    
-    latex = ROOT.TLatex()
-    latex.SetNDC()
-    latex.SetTextFont(61)
-    latex.SetTextAlign(11)
-    latex.DrawLatex(0.1, .93, "CMS");
-    latex.SetTextFont(52)
-    latex.DrawLatex(0.18, .93, "Preliminary");
-
-    latex2 = ROOT.TLatex()
-    latex2.SetNDC()
-    latex2.SetTextFont(42)
-    latex2.SetTextSize(0.04)
-    latex2.SetTextAlign(11)
-    latex2.DrawLatex(0.615, 0.93, " 42.45 fb^{-1} at #sqrt{s} =13 TeV");
-
-    c.Print("i_leak_Azimuth.pdf")
-    c.Print("i_leak_Azimuth.png")
-
-
 def __get_y_range(current_name, era, sub_system):
     y_range = {
         "leakage": {
@@ -623,7 +467,6 @@ def main(args):
     sub_system = args.sub_system
     era = args.era or str(args.first_fill) + "_" + str(args.last_fill)
 
-    # TODO: Where is this hard-coded list coming from?
     bad_fills = gUtl.get_bad_fills(args.bad_fills_file_name)
 
     # TODO: Where are these hard-coded numbers come from?
