@@ -1,3 +1,5 @@
+import datetime as dt
+
 
 def get_date_from_era(era):
     era_to_date = {
@@ -20,13 +22,40 @@ def get_phase_from_fill(fill):
     if not isinstance(fill, int):
         fill = int(fill)
 
-    if fill >= 1005 and fill <= 5576:
+    if fill >= 1005 and fill <= 5575:
         return 0
-    elif fill >= 5659:
+    elif fill >= 5698:
         return 1
+    else:
+        raise ValueError(f"Invalid fill number {fill}")
+    
+
+def get_phase_from_time(time):
+    """
+    Args:
+        time (datetime)
+    
+    Returns:
+        int
+    """
+
+    if time < dt.datetime(2016, 12, 6):
+        return 0
+    elif time >= dt.datetime(2017, 5, 23):
+        return 1
+    else:
+        raise ValueError(f"Invalid time {time}")
 
 
 def get_fills_for_era(era):
+    """
+    Args:
+        era (str): Allowed eras are years (in the YYYY format) or run number
+            (in the format run_X)
+    
+    Returns:
+        list[int]
+    """
 
     fills_2012 = list(range(3114, 3819))
     fills_2015 = list(range(3819, 4851))
@@ -35,11 +64,41 @@ def get_fills_for_era(era):
     fills_2018 = list(range(6467, 7495))
     fills_2022 = list(range(7917, 8152))
     fills_run1 = fills_2012
-    # Quick and dirty hack, phase 0 does not work
-    # fills_run2 = fills_2017 + fills_2018
     fills_run2 = fills_2015 + fills_2016 + fills_2017 + fills_2018
     fills_run3 = fills_2022
     fills_run1_and_run2 = fills_2015 + fills_2016 + fills_2017 + fills_2018
 
     return eval("fills_" + era)
 
+
+def get_run_number_from_fill(fill):
+    """
+    Args:
+        fill (int)
+    
+    Returns:
+        int
+    """
+
+    for run_number in range(1, 4):
+        if fill in get_fills_for_era("run" + str(run_number)):
+            return run_number
+    
+    raise ValueError("Fill number outside of valid range!")
+
+
+def get_pp_cross_section(fill):
+    """Return proton-proton non-fiducial cross-section in mb.
+    
+    Args:
+        fill (int)
+    
+    Returns:
+        float
+    """
+
+    run_number = get_run_number_from_fill(fill)
+    if run_number == 2:
+        return 79.1
+    else:
+        raise NotImplementedError
