@@ -1,85 +1,49 @@
 from pathlib import Path
-import math
 
+import pandas as pd
 import ROOT
 
 from utils import generalUtils as gUtl
-from utils import pixelDesignUtils as designUtl
-from utils.parserUtils import ArgumentParser
+import currents.helpers as currents_helper
+import currents.plotting_helpers as plotting_helper
+from utils.parserUtils import ArgumentParser, sanity_checks_leakage_current_flags
 from utils.pythonUtils import dict_linear_combination
-from utils.Module import ReadoutGroup
-from utils.constants import *
+from utils.modules import ReadoutGroup
+from utils.constants import CELSIUS_TO_KELVIN
+
 
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 ROOT.gROOT.SetBatch(ROOT.kTRUE)
 ROOT.gStyle.SetOptFit(0o001)
 ROOT.gStyle.SetPadLeftMargin(0.15)
 ROOT.gStyle.SetPadBottomMargin(0.15)
-# ROOT.gStyle.SetPadTopMargin(0.1)
 
 
 def __get_arguments():
 
     parser = ArgumentParser()
-    parser.add_input_fills_file_flag()
-    parser.add_bad_fills_file_flag()
-    parser.add_currents_input_directory_flag(default_directory="data/currents/processed")
-    parser.add_output_directory_flag(default_directory="plots/currents")
     parser.add_input_fills_flags(first_fill_required=True, last_fill_required=False)
-    parser.add_sub_system_flag()
-    parser.add_y_axis_range_flags(defaults=(0., 2000.))
+    parser.add_leakage_current_flags()
     parser.add_layer_flag(default=1)
+    parser.add_y_axis_range_flags(defaults=(0., 2000.))
+    parser.add_argument(
+        "-csv", "--produce_csv_files",
+        help="Produce csv file with temperature and leakage current per sector",
+        action="store_true",
+    ) 
+    parser.add_argument(
+        "-csv_dir", "--csv_directory",
+        help="Produce csv file with temperature and leakage current per sector",
+        default="data/currents/per_sector"
+    ) 
 
-    return parser.parse_args()
-
-
-# TODO: Put this function in some utils scripts
-def __temperature_scale_leakage_current(I, T):
-    I_vol = I/rocVol
-    #print "Average current per ROC: ", I
-    a = -Eg/(2*kb)
-    b =  (1./Tref) - (1./T)
-    expo = a * b
-    IatZero = I_vol * math.pow(Tref/T, 2) *math.exp(expo)
-#    return I_vol#IatZero
-    return IatZero
-
-
-def __get_leakage_currents_per_readout_group(fill, sub_system, layer, currents_directory, side="m"):
-    """Get currents versus azimuth phi for minus or plus z-side.
-    
-    Args:
-        side (str): "m" or "p" for minus or plus side
-    """
-
-    # TODO: Correct for this centrally
-    T_coolant = designUtl.get_coolant_temperature_for_fill(fill)
-    ### Sensor temperature in Kelvin
-    T_sensor = T_coolant + T_diff + Kfact
-
-    filename = currents_directory + "/" + str(fill) + "_" + sub_system + "_HV_ByLayer.txt"
-    f = open(filename, 'r+')
-
-    leakage_current_per_readout_group = {}
-
-    layer_string = "LYR" + str(layer)
-    for row in f.readlines():
-        readout_group_name, leakage_current = row.split()
-        _, half_cylinder, _, layer_candidate = readout_group_name.split("_")
-        z_side = half_cylinder[1]
-        if layer_candidate != layer_string: continue
-        if z_side != side: continue
-        leakage_current = float(leakage_current)
-        rescaled_leakage_current = __temperature_scale_leakage_current(leakage_current, T_sensor)
-        if readout_group_name in leakage_current_per_readout_group.keys():
-            print("Error: {readout_group_name} already added to dict!")
-            exit(0)
-        leakage_current_per_readout_group[readout_group_name] = rescaled_leakage_current
-
-    return leakage_current_per_readout_group
+    args = parser.parse_args()
+    sanity_checks_leakage_current_flags(args)
+    return args
 
 
-def __get_graph_vs_azimuth(quantity_per_readout_group, y_label, title, color):
+def __get_graph_vs_azimuth(quantity_per_readout_group, y_label, title, color,
+                           marker_style, marker_size):
 
     x_label = "Azimuthal angle #Phi [rad]"
 
@@ -94,98 +58,159 @@ def __get_graph_vs_azimuth(quantity_per_readout_group, y_label, title, color):
     graph = gUtl.get_graph(azimuthal_angles, y_values, x_label, y_label, title)
     graph.SetLineColor(color)
     graph.SetMarkerColor(color)
-    graph.SetMarkerStyle(22)
-    graph.SetMarkerSize(0.8)
+    graph.SetMarkerStyle(marker_style)
+    graph.SetMarkerSize(marker_size)
     return graph
 
 
-def __plot_graphs(graph_minus_side, graph_plus_side, y_min, y_max, legend_text,
+def __plot_graphs(graph_minus_side, graph_plus_side, y_min, y_max,
+                  text_top_left_corner, text_above_top_right_corner,
                   output_directory, figure_name, extensions):
 
-    leg = ROOT.TLegend(0.3, 0.78, 0.9, 0.9)
-    ROOT.SetOwnership(leg, 0)
-
-    leg.SetNColumns(1)
-    leg.SetFillColor(0)
-    leg.SetFillStyle(0)
-    leg.SetTextFont(42)
-    leg.SetBorderSize(0)
+    legend = ROOT.TLegend(0.8, 0.78, 0.9, 0.9)
+    legend.SetNColumns(1)
+    legend.SetFillColor(0)
+    legend.SetFillStyle(0)
+    legend.SetTextFont(42)
+    legend.SetBorderSize(0)
+    legend.SetTextSize(0.045)
 
     c = ROOT.TCanvas()
     c.cd()
 
+    plotting_helper.set_font_size_and_offset(graph_plus_side)
+
     graph_plus_side.GetYaxis().SetRangeUser(y_min, y_max)
     graph_minus_side.GetYaxis().SetRangeUser(y_min, y_max)
 
-    graph_plus_side.GetXaxis().SetLabelSize(0.045)
-    graph_plus_side.GetYaxis().SetLabelSize(0.045)
-    graph_plus_side.GetXaxis().SetTitleSize(0.05)
-    graph_plus_side.GetYaxis().SetTitleSize(0.05)
-    graph_plus_side.GetXaxis().SetTitleOffset(1.2)
-    graph_plus_side.GetYaxis().SetTitleOffset(1.35)
     graph_plus_side.Draw("AP")
     graph_minus_side.Draw("Psame")
 
-    leg.AddEntry(graph_plus_side, f"{legend_text}, +z", "P")
-    leg.AddEntry(graph_minus_side, f"{legend_text}, -z", "P")
-    leg.Draw("same")
-    
+    legend.AddEntry(graph_plus_side, "+z", "P")
+    legend.AddEntry(graph_minus_side, "-z", "P")
+    legend.Draw("same")
+ 
     latex = ROOT.TLatex()
     latex.SetNDC()
     latex.SetTextFont(61)
     latex.SetTextAlign(11)
-    latex.DrawLatex(0.1, .93, "CMS");
+    latex.DrawLatex(0.16, 0.92, "CMS");
     latex.SetTextFont(52)
-    latex.DrawLatex(0.18, .93, "Preliminary");
+    latex.DrawLatex(0.24, 0.92, "Preliminary");
 
-    # TODO: Automatize center of mass energy for Run3
-    # latex2 = ROOT.TLatex()
-    # latex2.SetNDC()
-    # latex2.SetTextFont(42)
-    # latex2.SetTextSize(0.04)
-    # latex2.SetTextAlign(11)
-    # latex2.DrawLatex(0.615, 0.93, " 42.45 fb^{-1} at #sqrt{s} = 13 TeV");
+    latex = ROOT.TLatex()
+    latex.SetNDC()
+    latex.SetTextFont(42)
+    latex.SetTextSize(0.045)
+    latex.SetTextAlign(13)
+    latex.DrawLatex(0.18, 0.88, text_top_left_corner);
 
+    latex = ROOT.TLatex()
+    latex.SetNDC()
+    latex.SetTextFont(42)
+    latex.SetTextSize(0.04)
+    latex.SetTextAlign(31)
+    latex.DrawLatex(0.9, 0.92, text_above_top_right_corner);
+   
     figure_base_name = output_directory + "/" + figure_name
     for extension in extensions:
         full_figure_name = figure_base_name + extension
         c.Print(full_figure_name)
 
 
+def __produce_csv_file(data_per_readout_group, column_names, file_name):
+    dataframes = []
+    index_label = "readout_group"
+    for data, column_name in zip(data_per_readout_group, column_names):
+        df = pd.Series(data).to_frame(column_name)
+        dataframes.append(df)
+    df = pd.concat(dataframes, axis=1)
+    df = df.rename_axis(index_label, axis=1)
+    df.to_csv(file_name, index_label=index_label)
+    print(f"{file_name} has been written.")
+
 
 def __plot_leakage_current_vs_phi(
         fill,
+        integrated_lumi,
         sub_system,
         layer,
         y_min,
         y_max,
         input_currents_directory,
+        input_temperatures_directory,
+        target_temperature,
+        normalize_to_volume,
+        normalize_to_number_of_rocs,
         output_directory,
-        extensions=(".png", ".pdf"),
+        produce_csv_files,
+        csv_directory,
+        extensions=(".png", ".pdf", ".root"),
     ):
 
-    base_args = (fill, sub_system, layer, input_currents_directory)
-    leakage_current_per_readout_group_minus_side = __get_leakage_currents_per_readout_group(*base_args, side="m")
-    leakage_current_per_readout_group_plus_side  = __get_leakage_currents_per_readout_group(*base_args, side="p")
+    base_args = (
+        sub_system,
+        layer,
+        input_currents_directory,
+        input_temperatures_directory,
+        target_temperature,
+        normalize_to_volume,
+        normalize_to_number_of_rocs,
+    )
+    f = currents_helper.get_leakage_currents_and_temperatures_per_readout_group
+    leakage_current_per_sector_minus_side, temperatures_per_sector_minus_side = f(fill, "m", *base_args)
+    leakage_current_per_sector_plus_side, temperatures_per_sector_plus_side  = f(fill, "p", *base_args)
 
     labels_args = {
         "title": "",
-        "y_label": "I_{leak} [#mu A / cm^{3}]", 
+        "y_label": plotting_helper.make_y_axis_title(
+            text="I_{leak}",
+            unit="#muA",
+            target_temperature=target_temperature,
+            normalize_to_volume=normalize_to_volume,
+            normalize_to_number_of_rocs=normalize_to_number_of_rocs,
+        ), 
     }
     graph_minus_side = __get_graph_vs_azimuth(
-        leakage_current_per_readout_group_minus_side,
+        leakage_current_per_sector_minus_side,
         color=ROOT.kBlue,
+        marker_style=20,
+        marker_size=1,
         **labels_args
     )
     graph_plus_side = __get_graph_vs_azimuth(
-        leakage_current_per_readout_group_plus_side,
+        leakage_current_per_sector_plus_side,
         color=ROOT.kRed,
+        marker_style=21,
+        marker_size=1,
         **labels_args
     )
 
-    figure_name = "leakage_current_vs_azimuthal_angle_fills_%d" % (fill)
-    legend_text = f"Fill {fill}, Layer {layer}"
-    __plot_graphs(graph_minus_side, graph_plus_side, y_min, y_max, legend_text,
+    if produce_csv_files:
+        leakage_current_per_readout_group = {
+            **leakage_current_per_sector_minus_side,
+            **leakage_current_per_sector_plus_side,
+        }
+        temperatures_per_readout_group = {
+            **temperatures_per_sector_minus_side,
+            **temperatures_per_sector_plus_side,
+        }
+        data = (leakage_current_per_readout_group, temperatures_per_readout_group)
+        column_names = (labels_args["y_label"], "sensor_temperature [K]")
+        file_name = "%s/leakage_current_and_temperature_per_sector_fill_%s.csv" \
+                    % (csv_directory, fill)
+        __produce_csv_file(data, column_names, file_name)
+
+    sub_system_text = "BPix" if sub_system == "Barrel" else "FPix"
+    figure_name = "leakage_current_vs_azimuthal_angle_fill_%d" % (fill)
+    if normalize_to_volume:
+        figure_name += "_volumeNormalization"
+    if target_temperature:
+        figure_name += "_correctedTo%dK" % target_temperature
+    text_top_left_corner = "Fill %d, %s Layer %s" % (fill, sub_system_text, layer)
+    text_above_top_right_corner = "(%s) %s TeV - %.1f fb^{-1}" % ("2022", "13.6", integrated_lumi)
+    __plot_graphs(graph_minus_side, graph_plus_side, y_min, y_max,
+                  text_top_left_corner, text_above_top_right_corner,
                   output_directory, figure_name, extensions)
 
 
@@ -197,57 +222,110 @@ def __plot_leakage_current_difference_vs_phi(
         y_min,
         y_max,
         input_currents_directory,
+        input_temperatures_directory,
+        target_temperature,
+        normalize_to_volume,
+        normalize_to_number_of_rocs,
         output_directory,
+        produce_csv_files,
+        csv_directory,
         extensions=(".png", ".pdf"),
     ):
 
-    base_args = (first_fill, sub_system, layer, input_currents_directory)
-    leakage_current_reference_per_sector_minus_side = __get_leakage_currents_per_readout_group(*base_args, side="m")
-    leakage_current_reference_per_sector_plus_side  = __get_leakage_currents_per_readout_group(*base_args, side="p")
+    base_args = (
+        sub_system,
+        layer,
+        input_currents_directory,
+        input_temperatures_directory,
+        target_temperature,
+        normalize_to_volume,
+        normalize_to_number_of_rocs,
+    )
 
-    base_args = (last_fill, sub_system, layer, input_currents_directory)
-    leakage_current_per_readout_group_minus_side = __get_leakage_currents_per_readout_group(*base_args, side="m")
-    leakage_current_per_readout_group_plus_side  = __get_leakage_currents_per_readout_group(*base_args, side="p")
+    f = currents_helper.get_leakage_currents_and_temperatures_per_readout_group
+    leakage_current_reference_per_sector_minus_side, temperatures_ref_per_sector_minus_side = f(first_fill, "m", *base_args)
+    leakage_current_reference_per_sector_plus_side, temperatures_ref_per_sector_plus_side  = f(first_fill, "p", *base_args)
+
+    leakage_current_per_sector_minus_side, temperatures_per_sector_minus_side = f(last_fill, "m", *base_args)
+    leakage_current_per_sector_plus_side, temperatures_per_sector_plus_side  = f(last_fill, "p", *base_args)
 
     leakage_current_difference_per_sector_minus_side = dict_linear_combination(
-        leakage_current_per_readout_group_minus_side,
+        leakage_current_per_sector_minus_side,
         leakage_current_reference_per_sector_minus_side,
         1,
         -1,
         reduce_to_common_keys=True,
     )
     leakage_current_difference_per_sector_plus_side = dict_linear_combination(
-        leakage_current_per_readout_group_plus_side,
+        leakage_current_per_sector_plus_side,
         leakage_current_reference_per_sector_plus_side,
         1,
         -1,
         reduce_to_common_keys=True,
     )
-    
+
     labels_args = {
         "title": "",
-        "y_label": "#Delta I_{leak} [#mu A / cm^{3}]", 
+        "y_label": plotting_helper.make_y_axis_title(
+            text="#DeltaI_{leak}",
+            unit="#muA",
+            target_temperature=target_temperature,
+            normalize_to_volume=normalize_to_volume,
+            normalize_to_number_of_rocs=normalize_to_number_of_rocs,
+        ), 
     }
     graph_minus_side = __get_graph_vs_azimuth(
         leakage_current_difference_per_sector_minus_side,
         color=ROOT.kBlue,
+        marker_style=20,
+        marker_size=1,
         **labels_args,
     )
     graph_plus_side = __get_graph_vs_azimuth(
         leakage_current_difference_per_sector_plus_side,
         color=ROOT.kRed,
+        marker_style=21,
+        marker_size=1,
         **labels_args,
     )
+    
+    if produce_csv_files:
+        leakage_current_difference_per_readout_group = {
+            **leakage_current_difference_per_sector_minus_side,
+            **leakage_current_difference_per_sector_plus_side,
+        }
+        temperatures_ref_per_readout_group = {
+            **temperatures_ref_per_sector_minus_side,
+            **temperatures_ref_per_sector_plus_side,
+        }
+        temperatures_per_readout_group = {
+            **temperatures_per_sector_minus_side,
+            **temperatures_per_sector_plus_side,
+        }
+        data = (
+            leakage_current_difference_per_readout_group,
+            temperatures_ref_per_readout_group,
+            temperatures_per_readout_group
+        )
+        column_names = (
+            labels_args["y_label"],
+            "sensor_temperature_fill_{first_fill} [K]",
+            "sensor_temperature_fill_{last_fill} [K]"
+        )
+        file_name = "%s/leakage_current_and_temperature_per_sector_fill_difference_%s_%s.csv" \
+                    % (csv_directory, first_fill, last_fill)
+        __produce_csv_file(data, column_names, file_name)
 
     figure_name = "leakage_current_difference_vs_azimuthal_angle_fills_%d_%d" % (first_fill, last_fill)
-    legend_text = f"Fills difference {last_fill}/{first_fill}, Layer {layer}"
-    __plot_graphs(graph_minus_side, graph_plus_side, y_min, y_max, legend_text,
+    text = f"Fills difference {last_fill}/{first_fill}, Layer {layer}"
+    __plot_graphs(graph_minus_side, graph_plus_side, y_min, y_max, text,
                   output_directory, figure_name, extensions)
 
 
 def main(args):
 
     Path(args.output_directory).mkdir(parents=True, exist_ok=True)
+    Path(args.csv_directory).mkdir(parents=True, exist_ok=True)
 
     bad_fills = gUtl.get_bad_fills(args.bad_fills_file_name)
     fills_info = gUtl.get_fill_info(args.input_fills_file_name)
@@ -262,17 +340,30 @@ def main(args):
         if fill not in fills:
             print("Error: Fill %d is not in list of valid fills!" % fill)
 
+    if args.target_temperature:
+        target_temperature = float(args.target_temperature) + CELSIUS_TO_KELVIN
+    else:
+        target_temperature = None
+
     base_args = (
         args.sub_system,
         args.layer,
         args.ymin,
         args.ymax,
         args.input_currents_directory,
+        args.input_temperatures_directory,
+        target_temperature,
+        args.normalize_to_volume,
+        args.normalize_to_number_of_rocs,
         args.output_directory,
+        args.produce_csv_files,
+        args.csv_directory,
     )
     if args.last_fill is None:
+        integrated_lumi = gUtl.get_integrated_lumi_per_fill(args.input_lumi_file_name)[args.first_fill]
         __plot_leakage_current_vs_phi(
             args.first_fill,
+            integrated_lumi,
             *base_args,
         )
     else:
