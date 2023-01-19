@@ -94,6 +94,7 @@ def main():
     suffix = (len(args.output_file_name_suffix) > 0) * "_" + args.output_file_name_suffix
     output_file_name = args.output_directory + "/" + "fills" + suffix  + ".csv"
     data.to_csv(output_file_name, index=False, columns=["fill_number", "start_stable_beam", "end_stable_beam"])
+    print(f"{output_file_name} was written.")
 
 
 if __name__ == "__main__":
