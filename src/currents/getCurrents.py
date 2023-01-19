@@ -47,18 +47,11 @@ def main(args):
     if not os.path.exists(args.output_directory):
         os.makedirs(args.output_directory)
 
-    number_of_rocs_cache = {}
     for fill in range(args.first_fill, args.last_fill+1):
 
         phase = eraUtl.get_phase_from_fill(fill)
         if phase != 1:
             raise NotImplementedError
-
-        n_rocs_key = (phase, args.sub_system)
-        if n_rocs_key not in number_of_rocs_cache.keys():
-            number_of_rocs_cache[n_rocs_key] = designUtl.get_number_of_rocs(phase, args.sub_system)
-
-        number_of_rocs = number_of_rocs_cache[n_rocs_key]
 
         allowed_layers = designUtl.get_layer_names(phase) + designUtl.get_disk_names(phase)
 
@@ -104,18 +97,18 @@ def main(args):
                 analog_currents[omds_readout_group_name] = current
 
             elif channel in (2, 3):
-                readout_group_name = designUtl.get_readout_group_name_from_omds_channel_name(omds_channel_name, phase=phase)
-                hv_currents[readout_group_name] = current / number_of_rocs[readout_group_name]
+                readout_group_name = designUtl.get_readout_group_name_from_omds_leakage_current_cable_name(omds_channel_name, phase=phase)
+                hv_currents[readout_group_name] = current
             
                 # TODO: Not sure this code is actually doing what one wants
                 #       It seems the current is per "PixelEndCap_BpI_D1", is this
                 #       a FPix readout group?
                 if("_D1_" in line and ("channel002" in line or "channel003" in line)):
-                    hv_currents[omds_channel_name.rsplit('1_')[0].strip()+ "1"] = current / number_of_rocs[k]
+                    hv_currents[omds_channel_name.rsplit('1_')[0].strip()+ "1"] = current
                 elif("_D2_" in line and ("channel002" in line or "channel003" in line)):
-                    hv_currents[omds_channel_name[0].rsplit('2_')[0].strip()+ "2"] = current / number_of_rocs[k]
+                    hv_currents[omds_channel_name[0].rsplit('2_')[0].strip()+ "2"] = current
                 elif("_D3_" in line and ("channel002" in line or "channel003" in line)):
-                    hv_currents[omds_channel_name[0].rsplit('3_')[0].strip()+ "3"] = current / number_of_rocs[k]
+                    hv_currents[omds_channel_name[0].rsplit('3_')[0].strip()+ "3"] = current
 
             else:
                 raise ValueError(f"Invalid channel {channel} in OMDS channel name {omds_channel_name}")
