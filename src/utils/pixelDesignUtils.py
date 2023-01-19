@@ -75,7 +75,7 @@ def get_layer_name_from_cable_name(cable_name):
         return cable_name.split("/")[0].split("_")[-2]
 
 
-def get_readout_group_name_from_omds_channel_name(omds_channel_name, phase=1):
+def get_readout_group_name_from_omds_leakage_current_cable_name(omds_channel_name, phase=1):
     """Get readout group name from OMDS database channel name.
 
     Args:
@@ -134,7 +134,69 @@ def get_readout_group_name_from_omds_channel_name(omds_channel_name, phase=1):
     return readout_group_name
 
 
-def get_omds_channel_name_from_readout_group_name(readout_group_name, phase=1):
+
+def get_omds_readout_group_name_from_readout_group_name(readout_group_name, phase=1):
+
+    if phase != 1:
+        raise NotImplementedError
+
+    sub_system = readout_group_name.split("_")[0]
+    if sub_system == "BPix":
+        _, half_cylinder, sector, layer = readout_group_name.split("_")
+        db_sector = sector.replace("SEC", "")
+        layer = layer[-1]
+        if layer == "1":
+            db_layer   = "14"
+        elif layer == "2":
+            db_layer   = "23"
+        elif layer == "3":
+            db_layer   = "23"
+        elif layer == "4":
+            db_layer   = "14"
+        else:
+            raise ValueError(f"Invalid readout group name {readout_group_name}")
+        
+        omds_name = "PixelBarrel_%s_S%s_LAY%s" % (
+                           half_cylinder,
+                           db_sector,
+                           db_layer,
+                       )
+
+    elif sub_system == "FPix":
+        raise NotImplementedError
+
+    return omds_name
+
+
+def get_omds_leakage_current_cable_name_from_readout_group_name(readout_group_name, phase=1):
+
+    if phase != 1:
+        raise NotImplementedError
+
+    sub_system = readout_group_name.split("_")[0]
+    if sub_system == "BPix":
+        _, _, _, layer = readout_group_name.split("_")
+        layer = layer[-1]
+        if layer in ("1", "3"):
+            db_channel = "2"
+        elif layer in ("2", "4"):
+            db_channel = "3"
+        else:
+            raise ValueError(f"Invalid readout group name {readout_group_name}")
+        
+        omds_readout_name = get_omds_readout_group_name_from_readout_group_name(readout_group_name)
+        channel_name = "%s/channel00%s" % (omds_readout_name, db_channel)
+
+    elif sub_system == "FPix":
+        raise NotImplementedError
+
+    else:
+        raise ValueError(f"Invalid module name {readout_group_name}")
+
+    return channel_name
+
+
+def get_omds_hv_cable_name_from_readout_group_name(readout_group_name, phase=1):
     """Get OMDS database channel name from readout group name.
 
     Args:
@@ -150,30 +212,17 @@ def get_omds_channel_name_from_readout_group_name(readout_group_name, phase=1):
 
     sub_system = readout_group_name.split("_")[0]
     if sub_system == "BPix":
-        _, half_cylinder, sector, layer = readout_group_name.split("_")
-        db_sector = sector.replace("SEC", "")
+        _, _, _, layer = readout_group_name.split("_")
         layer = layer[-1]
-        if layer == "1":
-            db_layer   = "14"
+        if layer in ("1", "3"):
+            db_channel = "1"
+        elif layer in ("2", "4"):
             db_channel = "2"
-        elif layer == "2":
-            db_layer   = "23"
-            db_channel = "3"
-        elif layer == "3":
-            db_layer   = "23"
-            db_channel = "2"
-        elif layer == "4":
-            db_layer   = "14"
-            db_channel = "3"
         else:
             raise ValueError(f"Invalid readout group name {readout_group_name}")
         
-        channel_name = "PixelBarrel_%s_S%s_LAY%s/channel00%s" % (
-                           half_cylinder,
-                           db_sector,
-                           db_layer,
-                           db_channel,
-                       )
+        omds_readout_name = get_omds_readout_group_name_from_readout_group_name(readout_group_name)
+        channel_name = "%s/HV%s" % (omds_readout_name, db_channel)
 
     elif sub_system == "FPix":
         raise NotImplementedError
@@ -182,4 +231,3 @@ def get_omds_channel_name_from_readout_group_name(readout_group_name, phase=1):
         raise ValueError(f"Invalid module name {readout_group_name}")
 
     return channel_name
-
