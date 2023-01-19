@@ -1,17 +1,14 @@
-import math
+"""Physics constants.
 
-# TODO: Check those numbers
+This script contains physics constants to be used in the rest of the repo.
+"""
 
-#### --------------------------------------------------------------------------------------------------------------
-#### Constants
-kb = 8.6173324 * math.pow(10, -5) # [eV * K^{-1}]
-Eg = 1.21 # [eV]
-Kfact = 273.15
-Tref = Kfact
-### Coolant temperature
-T_coolant = -10
-### Actual sensor temperature is higher than coolant temperature. Considering here +10 degrees.
-T_diff = 10
-### Sensor volume
-rocVol = 0.81 * 0.81 * 0.0285
-#### --------------------------------------------------------------------------------------------------------------
+# Boltzmann constant [ev/K]
+K_B = 8.6173324e-5
+
+# Effective band gap energy [eV]
+# See https://iopscience.iop.org/article/10.1088/1748-0221/8/10/P10003
+E_G_EFF = 1.21
+
+# Celsius to Kelvin
+CELSIUS_TO_KELVIN = 273.15
