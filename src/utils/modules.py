@@ -29,12 +29,12 @@ class BPixModule:
         """
         Args:
             fluence_field (ROOT.TH2F): Fluence field, in n_eq.cm-2
-            lumi (float): Integrated luminosity in fb-1
+            lumi (float): Integrated luminosity in fb-1 (resp. fb-1.s-1)
             pp_cross_section (float): proton-proton total cross-section in mb
             dz (float): axial integration element in cm
     
         Returns:
-            float: Fluence for the module, in n_eq.cm-2
+            float: Fluence for the module, in n_eq.cm-2 (resp. n_eq.cm-2.s-1)
         """
 
         lumi *= 1e-15  # convert from /fb to /b
@@ -140,12 +140,12 @@ class ReadoutGroup:
 
         Args:
             fluence_field (ROOT.TH2F): Fluence field, in n_eq.cm-2
-            lumi (float): Integrated luminosity in fb-1
+            lumi (float): Integrated luminosity in fb-1 (resp. fb-1.s-1)
             pp_cross_section (float): proton-proton total cross-section in mb
             dx (float): infinitesimal integration element in cm
     
         Returns:
-            float: Fluence for the module, in n_eq.cm-2
+            float: Fluence for the module, in n_eq.cm-2 (resp. n_eq.cm-2.s-1)
         """
 
         fluence = 0
