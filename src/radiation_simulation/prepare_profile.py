@@ -1,5 +1,4 @@
 import os
-import re
 import argparse
 from pathlib import Path
 from inspect import cleandoc as multi_line_str
@@ -9,18 +8,18 @@ import datetime as dt
 import ROOT
 
 from utils import generalUtils as gUtl
-from utils import pythonUtils as pyUtl
 from utils import databaseUtils as dbUtl
 from utils import eraUtils as eraUtl
 from utils import pixelDesignUtils as designUtl
-from utils.Module import ReadoutGroup
-from config.cooling.omds_dcs_aliases import omds_to_dcs_alias
+from utils.modules import ReadoutGroup
+from temperatures.helpers import get_sensor_temperature
+from fluence.helpers import get_fluence
 
 
+ROOT.PyConfig.IgnoreCommandLineOptions = True
 PROFILE_FORMAT = "%d\t%d\t\t%4.2f\t\t%10d\t\t%6.2f"
 USER_NAME, PASSWORD, DATABASE_NAME = dbUtl.get_oms_database_user_password_and_name()
 NA_VALUE = -999
-CELSIUS_TO_KELVIN = 273.15
 
 
 def __get_arguments():
@@ -65,18 +64,32 @@ def __get_arguments():
         default="profile.csv",
     )
     parser.add_argument(
+        "-di", "--interfill_delay",
+        help="Time at which to perform first measurement during the interfill in seconds",
+        type=int,
+        required=False,
+        default=1200,
+    )
+    parser.add_argument(
+        "-df", "--fill_delay",
+        help="Time at which to perform first measurement during the fill in seconds",
+        type=int,
+        required=False,
+        default=1200,
+    )
+    parser.add_argument(
         "-tsi", "--interfill_time_step",
         help="Time step during interfill in seconds",
         type=int,
         required=False,
-        default=1200,
+        default=3600,
     )
     parser.add_argument(
         "-tsf", "--fill_time_step",
         help="Time step during fill in seconds",
         type=int,
         required=False,
-        default=1200,
+        default=3600,
     )
     parser.add_argument(
         "-v", "--verbose",
@@ -101,7 +114,7 @@ def __get_leakage_current(readout_group, begin_time, end_time):
     oracle_time_mask = "DD-Mon-YYYY HH24.MI.SS.FF"
     phase = eraUtl.get_phase_from_time(begin_time)
 
-    channel_name = designUtl.get_omds_channel_name_from_readout_group_name(readout_group.name, phase=phase)
+    channel_name = designUtl.get_omds_leakage_current_cable_name_from_readout_group_name(readout_group.name, phase=phase)
 
     if phase == 1:
         sub_system = channel_name.split("_")[0]
@@ -156,197 +169,12 @@ def __get_leakage_current(readout_group, begin_time, end_time):
     if len(output) == 1:
         leakage_current = output[0][0]
     elif len(output) == 0:
-        leakage_current = NA_VALUE
+        # leakage_current = NA_VALUE
+        leakage_current = __get_leakage_current(readout_group, begin_time - dt.timedelta(0, 3600), begin_time)
     else:
         print("Error: Leakage current query returned %d rows, but should return at most 1 only!" % (len(output)))
 
     return leakage_current
-
-
-def __get_number_of_sensors_in_cooling_loop(cooling_loop_sensor_name):
-    """Get number of working sensors in the given cooling pipe.
-
-    Args:
-        cooling_loop_sensor_name (str): OMDS database cooling pipe name, e.g. PixelBarrel_BmI_1I_L4D2MN
-
-    Returns:
-        int
-    """
-
-    if ("L1D1" in cooling_loop_sensor_name):
-        n_sensors = 3 if "F" in cooling_loop_sensor_name else 2
-
-    if ("L1D2" in cooling_loop_sensor_name):
-        n_sensors = 2 if "F" in cooling_loop_sensor_name else 3
-
-    if ("L2D1" in cooling_loop_sensor_name):
-        n_sensors = 3
-
-    if ("L2D2" in cooling_loop_sensor_name):
-        n_sensors = 2
-
-    if ("L3D1" in cooling_loop_sensor_name):
-        n_sensors = 3 if "F" in cooling_loop_sensor_name else 2
-
-    if ("L3D2" in cooling_loop_sensor_name):
-        n_sensors = 3
-
-    if ("L3D3" in cooling_loop_sensor_name):
-        n_sensors = 3
-
-    if ("L3D4" in cooling_loop_sensor_name):
-        n_sensors = 3
-
-    if ("L4D" in cooling_loop_sensor_name):
-        n_sensors = 3
-
-    return n_sensors
-
-
-def __get_sectors_regex_from_cooling_loop_sensor_name(cooling_loop_sensor_name):
-    """Get regex of the BPix sectors cooled down by a cooling pipe.
-
-    Args:
-        cooling_loop_sensor_name (str): OMDS database cooling pipe name, e.g. PixelBarrel_BmI_1I_L4D2MN
-
-    Returns:
-        str
-    """
-
-    def __make_regex(cooling_loop_sensor_name, suffix):
-    
-        if ("N" in cooling_loop_sensor_name): # Near
-            sectors_regex = cooling_loop_sensor_name[:5] + "B[mp]I_" + suffix
-    
-        if ("F" in cooling_loop_sensor_name): # Far
-            sectors_regex = cooling_loop_sensor_name[:5] + "B[mp]O_" + suffix
-    
-        return sectors_regex
-
-
-    cooling_loop_sensor_name = cooling_loop_sensor_name.replace("PixelBarrel", "BPix")
-    cooling_loop_sensor_name = cooling_loop_sensor_name.replace("PixelEndcap", "FPix")
-
-    if ("L1D1" in cooling_loop_sensor_name):
-        sectors_regex = __make_regex(cooling_loop_sensor_name, "SEC[1234]_LYR1")
-
-    if ("L1D2" in cooling_loop_sensor_name):
-        sectors_regex = __make_regex(cooling_loop_sensor_name, "SEC[5678]_LYR1")
-
-    if ("L2D1" in cooling_loop_sensor_name):
-        sectors_regex = __make_regex(cooling_loop_sensor_name, "SEC[1234]_LYR2")
-
-    if ("L2D2" in cooling_loop_sensor_name):
-        sectors_regex = __make_regex(cooling_loop_sensor_name, "SEC[5678]_LYR2")
-
-    if ("L3D1" in cooling_loop_sensor_name):
-        sectors_regex = __make_regex(cooling_loop_sensor_name, "SEC[12]_LYR3")
-
-    if ("L3D2" in cooling_loop_sensor_name):
-        sectors_regex = __make_regex(cooling_loop_sensor_name, "SEC[34]_LYR3")
-
-    if ("L3D3" in cooling_loop_sensor_name):
-        sectors_regex = __make_regex(cooling_loop_sensor_name, "SEC[56]_LYR3")
-
-    if ("L3D4" in cooling_loop_sensor_name):
-        sectors_regex = __make_regex(cooling_loop_sensor_name, "SEC[78]_LYR3")
-
-    if ("L4D1" in cooling_loop_sensor_name):
-        sectors_regex = __make_regex(cooling_loop_sensor_name, "SEC[12]_LYR4")
-
-    if ("L4D2" in cooling_loop_sensor_name):
-        sectors_regex = __make_regex(cooling_loop_sensor_name, "SEC[34]_LYR4")
-
-    if ("L4D3" in cooling_loop_sensor_name):
-        sectors_regex = __make_regex(cooling_loop_sensor_name, "SEC[56]_LYR4")
-
-    if ("L4D4" in cooling_loop_sensor_name):
-        sectors_regex = __make_regex(cooling_loop_sensor_name, "SEC[78]_LYR4")
-
-    return sectors_regex
-
-
-def __get_module_cooling_loop_temperature(readout_group, begin_time, end_time):
-    """Get cooling loop temperature corresponding to a BPix read out group."""
-
-    connection = cx_Oracle.connect('%s/%s@%s' % (USER_NAME, PASSWORD, DATABASE_NAME))
-    cursor = connection.cursor()
-    cursor.arraysize = 50
-
-    name = "PixelBarrel(.*)(PF|PN|MF|MN)(.*)"
-    
-    query = multi_line_str("""
-        WITH ids as (
-            SELECT id, SUBSTR(alias, INSTR(alias,'/',-1)+1) AS part 
-            FROM cms_trk_dcs_pvss_cond.aliases
-            JOIN cms_trk_dcs_pvss_cond.dp_name2id 
-            ON RTRIM(cms_trk_dcs_pvss_cond.aliases.dpe_name,'.') = cms_trk_dcs_pvss_cond.dp_name2id.dpname
-            WHERE REGEXP_LIKE(substr(alias,instr(alias,'/',-1)+1), :name)
-        )
-        SELECT part, value_converted, change_date 
-        FROM ids
-        JOIN cms_trk_dcs_pvss_cond.tkplcreadsensor ON ids.id = cms_trk_dcs_pvss_cond.tkplcreadsensor.DPID 
-        WHERE cms_trk_dcs_pvss_cond.tkplcreadsensor.change_date >= :start_time
-        AND cms_trk_dcs_pvss_cond.tkplcreadsensor.change_date < :stop_time
-        ORDER BY cms_trk_dcs_pvss_cond.tkplcreadsensor.change_date DESC
-    """)
-
-    cursor.execute(query, {'name': name, 'start_time': begin_time, 'stop_time': end_time})
-    rows = cursor.fetchall()
-    connection.close()
-
-    n_sensors = None
-    temperatures = {}
-
-    for item in rows:
-        cooling_loop_sensor_name = item[0]
-        temperature = item[1]
-        date_changed = item[2]
-
-        if float(temperature) > 40:
-            print("Warning: Faulty sensor for cooling loop sensor %s" % cooling_loop_sensor_name)
-            continue # ignore the broken temperature sensors giving crazy values
-
-        # Correct the cooling loop alias mismapping from OMDS to DCS
-        omds_alias = pyUtl.list_to_str(cooling_loop_sensor_name.split("_")[-2:], "_")
-        dcs_alias = omds_to_dcs_alias(omds_alias)
-        cooling_loop_sensor_name = cooling_loop_sensor_name.replace(omds_alias, dcs_alias) 
-
-        sectors_regex = __get_sectors_regex_from_cooling_loop_sensor_name(cooling_loop_sensor_name)
-
-        if re.search(sectors_regex, readout_group.name):
-            # We get the first occurence of the temperature, because
-            # temperatures are ordered by decreasing time
-            if cooling_loop_sensor_name not in temperatures.keys():
-                temperatures[cooling_loop_sensor_name] = temperature
-                
-            if n_sensors is None:
-                n_sensors = __get_number_of_sensors_in_cooling_loop(cooling_loop_sensor_name)
-
-    if n_sensors is None or len(temperatures.keys()) < n_sensors:
-        time_window_extension = 10 * dt.timedelta(0, 3600)
-        return __get_module_cooling_loop_temperature(readout_group, begin_time - time_window_extension, end_time)
-
-    else:
-        temperatures_values = temperatures.values()
-        temperatures_avg = sum(temperatures_values) / len(temperatures_values)
-        return temperatures_avg + CELSIUS_TO_KELVIN
-
-
-def __get_temperature(readout_group, begin_time, end_time, hv_on):
-    """Get silicon temperature."""
-
-    cooling_loop_temperature =  __get_module_cooling_loop_temperature(readout_group, begin_time, end_time)
-    if hv_on:
-        # Temperature difference between cooling carbon fiber support and silicon temperatures
-        if "LYR4" in readout_group.name:
-            temperature_difference = 4
-        else:
-            temperature_difference = 3
-    else:
-        temperature_difference = 0
-
-    return cooling_loop_temperature + temperature_difference
 
 
 def __get_lumi(begin_datetime, end_datetime):
@@ -380,10 +208,6 @@ def __get_lumi(begin_datetime, end_datetime):
     return lumi
 
 
-def __get_fluence(readout_group, pp_cross_section, fluence_field, lumi):
-    return readout_group.getAverageFluence(fluence_field, lumi, pp_cross_section)
-
-
 def __get_interfill_data(readout_group, measurement_time, time_interval):
     """Return radiation simulation data for an interval during the interfill.
 
@@ -394,11 +218,94 @@ def __get_interfill_data(readout_group, measurement_time, time_interval):
     end_time = measurement_time
 
     duration = time_interval.total_seconds()
-    temperature = __get_temperature(readout_group, begin_time, end_time, hv_on=False)
+    temperature = get_sensor_temperature(
+        readout_group,
+        begin_time,
+        end_time,
+        correct_for_self_heating=True,
+        correct_for_fluence=False,
+    )
     leakage_current = NA_VALUE
     fluence = 0
 
     return duration, temperature, leakage_current, fluence
+
+
+def __get_and_write_interfill_measurement(
+        profile,
+        readout_group,
+        begin_time,
+        measurement_time,
+        verbose,
+        add_to_duration=0.,
+    ):
+
+    time_interval = measurement_time - begin_time
+    duration, temperature, leakage_current, fluence = __get_interfill_data(
+        readout_group,
+        measurement_time,
+        time_interval,
+    )
+    duration += add_to_duration
+    line = PROFILE_FORMAT % (dt.datetime.timestamp(measurement_time),
+        duration, temperature, fluence, leakage_current)
+    if verbose: print(line)
+    profile.write(line + "\n")
+
+
+def __add_interfill_to_profile(
+        profile,
+        readout_group,
+        end_stable_beam_time_last_fill,
+        begin_stable_beam_time,
+        interfill_time_delay,
+        interfill_time_interval,
+        verbose,
+    ):
+
+    # First measurement after time delay
+    last_measurement_time = end_stable_beam_time_last_fill
+    measurement_time = end_stable_beam_time_last_fill + interfill_time_delay
+    __get_and_write_interfill_measurement(
+        profile,
+        readout_group,
+        last_measurement_time,
+        measurement_time,
+        verbose,
+    )
+    last_measurement_time = measurement_time
+
+    # Measurements every time interval
+    measurement_time = last_measurement_time + interfill_time_interval
+    while measurement_time < begin_stable_beam_time:
+        __get_and_write_interfill_measurement(
+            profile,
+            readout_group,
+            last_measurement_time,
+            measurement_time,
+            verbose,
+        )
+        last_measurement_time = measurement_time
+        measurement_time += interfill_time_interval
+
+    # Last measurement at end of interfill
+    # Cannot read values right at the end of stable beam, because the Pixel
+    # Pixel goes in HV on right when stable beams are declared
+    if (begin_stable_beam_time - last_measurement_time).total_seconds() > 300:
+        time_delta = dt.timedelta(0, 300)
+    elif (begin_stable_beam_time - last_measurement_time).total_seconds() > 120:
+        time_delta = dt.timedelta(0, 120)
+    else:
+        time_delta = dt.timedelta(0, 0)
+    measurement_time = begin_stable_beam_time - time_delta
+    __get_and_write_interfill_measurement(
+        profile,
+        readout_group,
+        last_measurement_time,
+        measurement_time,
+        verbose,
+        add_to_duration=time_delta.total_seconds(),
+    )
 
 
 def __get_fill_data(readout_group, pp_cross_section, fluence_field, measurement_time, time_interval):
@@ -411,43 +318,42 @@ def __get_fill_data(readout_group, pp_cross_section, fluence_field, measurement_
     end_time = measurement_time
 
     duration = time_interval.total_seconds()
-    temperature = __get_temperature(readout_group, begin_time, end_time, hv_on=True)
     leakage_current = __get_leakage_current(readout_group, begin_time, end_time)
-    lumi = __get_lumi(begin_time, end_time)
-    fluence = __get_fluence(readout_group, pp_cross_section, fluence_field, lumi)
+    lumi = __get_lumi(begin_time, end_time) / duration
+    fluence = get_fluence(readout_group, pp_cross_section, fluence_field, lumi)
+    temperature = get_sensor_temperature(
+        readout_group,
+        begin_time,
+        end_time,
+        correct_for_self_heating=True,
+        correct_for_fluence=True,
+        fluence=fluence,
+    )
 
     return duration, temperature, leakage_current, fluence
 
 
-def __add_interfill_to_profile(
+def __get_and_write_fill_measurement(
         profile,
         readout_group,
-        end_stable_beam_time_last_fill,
-        begin_stable_beam_time,
-        interfill_time_interval,
+        pp_cross_section,
+        fluence_field,
+        begin_time,
+        measurement_time,
         verbose,
+        add_to_duration=0.,
     ):
 
-    measurement_time = end_stable_beam_time_last_fill + interfill_time_interval
-    while measurement_time < begin_stable_beam_time:
-        duration, temperature, leakage_current, fluence = __get_interfill_data(
-            readout_group,
-            measurement_time,
-            interfill_time_interval,
-        )
-        line = PROFILE_FORMAT % (dt.datetime.timestamp(measurement_time),
-            duration, temperature, fluence, leakage_current)
-        if verbose: print(line)
-        profile.write(line + "\n")
-        measurement_time += interfill_time_interval
-
-    last_measurement_time = measurement_time - interfill_time_interval
-    duration, temperature, leakage_current, fluence = __get_interfill_data(
+    time_interval = measurement_time - begin_time
+    duration, temperature, leakage_current, fluence = __get_fill_data(
         readout_group,
-        begin_stable_beam_time,
-        begin_stable_beam_time - last_measurement_time,
+        pp_cross_section,
+        fluence_field,
+        measurement_time,
+        time_interval,
     )
-    line = PROFILE_FORMAT % (dt.datetime.timestamp(begin_stable_beam_time),
+    duration += add_to_duration
+    line = PROFILE_FORMAT % (dt.datetime.timestamp(measurement_time),
         duration, temperature, fluence, leakage_current)
     if verbose: print(line)
     profile.write(line + "\n")
@@ -456,41 +362,65 @@ def __add_interfill_to_profile(
 def __add_fill_to_profile(
         profile,
         readout_group,
-        fluence_field,
         pp_cross_section,
+        fluence_field,
         begin_stable_beam_time,
         end_stable_beam_time,
+        fill_time_delay,
         fill_time_interval,
         verbose,
     ):
 
-    measurement_time = begin_stable_beam_time + fill_time_interval
-    while measurement_time < end_stable_beam_time:
-        duration, temperature, leakage_current, fluence = __get_fill_data(
-            readout_group,
-            pp_cross_section,
-            fluence_field,
-            measurement_time,
-            fill_time_interval,
-        )
-        line = PROFILE_FORMAT % (dt.datetime.timestamp(measurement_time),
-            duration, temperature, fluence, leakage_current)
-        if verbose: print(line)
-        profile.write(line + "\n")
-        measurement_time += fill_time_interval
-
-    last_measurement_time = measurement_time - fill_time_interval
-    duration, temperature, leakage_current, fluence = __get_fill_data(
+    # First measurement after time delay
+    last_measurement_time = begin_stable_beam_time
+    measurement_time = begin_stable_beam_time + fill_time_delay
+    __get_and_write_fill_measurement(
+        profile,
         readout_group,
         pp_cross_section,
         fluence_field,
-        end_stable_beam_time,
-        end_stable_beam_time - last_measurement_time,
+        last_measurement_time,
+        measurement_time,
+        verbose,
     )
-    line = PROFILE_FORMAT % (dt.datetime.timestamp(end_stable_beam_time),
-        duration, temperature, fluence, leakage_current)
-    if verbose: print(line)
-    profile.write(line + "\n")
+    last_measurement_time = measurement_time
+
+    # Measurements every time interval
+    measurement_time = last_measurement_time + fill_time_interval
+    while measurement_time < end_stable_beam_time:
+        __get_and_write_fill_measurement(
+            profile,
+            readout_group,
+            pp_cross_section,
+            fluence_field,
+            last_measurement_time,
+            measurement_time,
+            verbose,
+        )
+        last_measurement_time = measurement_time
+        measurement_time += fill_time_interval
+
+    # Last measurement at end of fill
+    # Cannot read leakage current right at the end of stable beam, because the
+    # Pixel goes in HV off a couple of minutes before the end of stable beam
+    measurement_time = end_stable_beam_time
+    if (end_stable_beam_time - last_measurement_time).total_seconds() > 300:
+        time_delta = dt.timedelta(0, 300)
+    elif (end_stable_beam_time - last_measurement_time).total_seconds() > 120:
+        time_delta = dt.timedelta(0, 120)
+    else:
+        time_delta = dt.timedelta(0, 0)
+    measurement_time = end_stable_beam_time - time_delta
+    __get_and_write_fill_measurement(
+        profile,
+        readout_group,
+        pp_cross_section,
+        fluence_field,
+        last_measurement_time,
+        measurement_time,
+        verbose,
+        add_to_duration=time_delta.total_seconds(),
+    )
 
 
 def main():
@@ -506,12 +436,14 @@ def main():
     readout_group = ReadoutGroup(args.readout_group)
 
     end_stable_beam_datetime_last_fill = None
+    interfill_time_delay = dt.timedelta(0, args.interfill_delay)
     interfill_time_interval = dt.timedelta(0, args.interfill_time_step)
+    fill_time_delay = dt.timedelta(0, args.fill_delay)
     fill_time_interval = dt.timedelta(0, args.fill_time_step)
 
-    profile_path = args.output_directory + args.profile
+    profile_path = args.output_directory + "/" +  args.profile
     profile = open(profile_path, "w")
-    header_line = "Timestamp [s]\tDuration [s]\tTemperature [K]\tFluence [n_eq/cm2]\tLeakage_current [mA/cm2]"
+    header_line = "Timestamp [s]\tDuration [s]\tTemperature [K]\tFluence [n_eq/cm2/s]\tLeakage_current [mA/cm2]"
     if args.verbose: print(header_line)
     profile.write(header_line + "\n")
 
@@ -529,29 +461,37 @@ def main():
         end_stable_beam_time = dt.datetime.fromisoformat(fill_info.end_stable_beam.to_list()[0])
 
         if end_stable_beam_datetime_last_fill is not None:
-            __add_interfill_to_profile(
-                profile,
-                readout_group,
-                end_stable_beam_datetime_last_fill,
-                begin_stable_beam_time,
-                interfill_time_interval,
-                verbose=args.verbose,
-            )
+            interfill_duration = begin_stable_beam_time - end_stable_beam_datetime_last_fill
+            if interfill_duration < interfill_time_delay:
+                print(f"Warning: Interill duration ({interfill_duration.total_seconds()/60} min.) "
+                      f"smaller than interfill time delay, no data collected during interfill")
+            else:
+                __add_interfill_to_profile(
+                    profile,
+                    readout_group,
+                    end_stable_beam_datetime_last_fill,
+                    begin_stable_beam_time,
+                    interfill_time_delay,
+                    interfill_time_interval,
+                    verbose=args.verbose,
+                )
 
         fill_duration = end_stable_beam_time - begin_stable_beam_time
-        if fill_duration < fill_time_interval:
-            print("Warning: Short fill! Fill duration is %.1f [min]" % (fill_duration.total_seconds()/60))
-
-        __add_fill_to_profile(
-            profile,
-            readout_group,
-            fluence_field,
-            pp_cross_section,
-            begin_stable_beam_time,
-            end_stable_beam_time,
-            fill_time_interval,
-            verbose=args.verbose,
-        )
+        if fill_duration < fill_time_delay:
+            print(f"Warning: Fill duration ({fill_duration.total_seconds()/60} min.) "
+                  f"smaller than interfill time delay, no data collected during interfill")
+        else:
+            __add_fill_to_profile(
+                profile,
+                readout_group,
+                pp_cross_section,
+                fluence_field,
+                begin_stable_beam_time,
+                end_stable_beam_time,
+                fill_time_delay,
+                fill_time_interval,
+                verbose=args.verbose,
+            )
 
         end_stable_beam_datetime_last_fill = end_stable_beam_time
 
